@@ -5,6 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.taqwa.journal.data.database.JournalDatabase
 import com.taqwa.journal.data.database.JournalEntry
+import com.taqwa.journal.data.preferences.PromiseManager
+import com.taqwa.journal.data.preferences.RelapseRecord
+import com.taqwa.journal.data.preferences.StreakManager
 import com.taqwa.journal.data.repository.JournalRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,12 +18,46 @@ import kotlinx.coroutines.launch
 class JournalViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: JournalRepository
+    val streakManager: StreakManager
+    val promiseManager: PromiseManager
 
-    // All entries from database
     val allEntries: Flow<List<JournalEntry>>
-
-    // Urges defeated count
     val urgesDefeatedCount: Flow<Int>
+
+    // Streak state
+    private val _currentStreak = MutableStateFlow(0)
+    val currentStreak: StateFlow<Int> = _currentStreak.asStateFlow()
+
+    private val _longestStreak = MutableStateFlow(0)
+    val longestStreak: StateFlow<Int> = _longestStreak.asStateFlow()
+
+    private val _streakStatus = MutableStateFlow("")
+    val streakStatus: StateFlow<String> = _streakStatus.asStateFlow()
+
+    private val _milestoneMessage = MutableStateFlow<String?>(null)
+    val milestoneMessage: StateFlow<String?> = _milestoneMessage.asStateFlow()
+
+    private val _totalRelapses = MutableStateFlow(0)
+    val totalRelapses: StateFlow<Int> = _totalRelapses.asStateFlow()
+
+    private val _relapseHistory = MutableStateFlow<List<RelapseRecord>>(emptyList())
+    val relapseHistory: StateFlow<List<RelapseRecord>> = _relapseHistory.asStateFlow()
+
+    // Promise Wall state
+    private val _promises = MutableStateFlow<List<String>>(emptyList())
+    val promises: StateFlow<List<String>> = _promises.asStateFlow()
+
+    private val _whyQuitting = MutableStateFlow("")
+    val whyQuitting: StateFlow<String> = _whyQuitting.asStateFlow()
+
+    private val _duas = MutableStateFlow<List<String>>(emptyList())
+    val duas: StateFlow<List<String>> = _duas.asStateFlow()
+
+    private val _personalReminders = MutableStateFlow<List<String>>(emptyList())
+    val personalReminders: StateFlow<List<String>> = _personalReminders.asStateFlow()
+
+    private val _hasPromiseContent = MutableStateFlow(false)
+    val hasPromiseContent: StateFlow<Boolean> = _hasPromiseContent.asStateFlow()
 
     // Current entry being built during the flow
     private val _currentSituationContext = MutableStateFlow("")
@@ -47,40 +84,106 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         repository = JournalRepository(dao)
         allEntries = repository.allEntries
         urgesDefeatedCount = repository.urgesDefeatedCount
+
+        streakManager = StreakManager(application)
+        promiseManager = PromiseManager(application)
+
+        if (streakManager.isFirstTime()) {
+            streakManager.startNewStreak()
+        }
+
+        refreshStreakData()
+        refreshPromiseData()
     }
 
-    // Update functions for each question
+    // Refresh streak data
+    fun refreshStreakData() {
+        _currentStreak.value = streakManager.getCurrentStreak()
+        _longestStreak.value = streakManager.getLongestStreak()
+        _streakStatus.value = streakManager.getStreakStatusText()
+        _milestoneMessage.value = streakManager.getMilestoneMessage()
+        _totalRelapses.value = streakManager.getTotalRelapses()
+        _relapseHistory.value = streakManager.getRelapseHistory()
+    }
+
+    // Refresh promise wall data
+    fun refreshPromiseData() {
+        _promises.value = promiseManager.getPromises()
+        _whyQuitting.value = promiseManager.getWhyQuitting()
+        _duas.value = promiseManager.getDuas()
+        _personalReminders.value = promiseManager.getReminders()
+        _hasPromiseContent.value = promiseManager.hasContent()
+    }
+
+    // Streak functions
+    fun resetStreak(reason: String) {
+        streakManager.resetStreak(reason)
+        refreshStreakData()
+    }
+
+    fun dismissMilestone() {
+        _milestoneMessage.value = null
+    }
+
+    // Promise Wall functions
+    fun addPromise(promise: String) {
+        promiseManager.addPromise(promise)
+        refreshPromiseData()
+    }
+
+    fun deletePromise(index: Int) {
+        promiseManager.deletePromise(index)
+        refreshPromiseData()
+    }
+
+    fun setWhyQuitting(why: String) {
+        promiseManager.setWhyQuitting(why)
+        refreshPromiseData()
+    }
+
+    fun addDua(dua: String) {
+        promiseManager.addDua(dua)
+        refreshPromiseData()
+    }
+
+    fun deleteDua(index: Int) {
+        promiseManager.deleteDua(index)
+        refreshPromiseData()
+    }
+
+    fun addReminder(reminder: String) {
+        promiseManager.addReminder(reminder)
+        refreshPromiseData()
+    }
+
+    fun deleteReminder(index: Int) {
+        promiseManager.deleteReminder(index)
+        refreshPromiseData()
+    }
+
+    // Entry functions
     fun updateSituationContext(text: String) {
         _currentSituationContext.value = text
     }
 
     fun toggleFeeling(feeling: String) {
         val current = _currentFeelings.value.toMutableList()
-        if (current.contains(feeling)) {
-            current.remove(feeling)
-        } else {
-            current.add(feeling)
-        }
+        if (current.contains(feeling)) current.remove(feeling)
+        else current.add(feeling)
         _currentFeelings.value = current
     }
 
     fun toggleRealNeed(need: String) {
         val current = _currentRealNeed.value.toMutableList()
-        if (current.contains(need)) {
-            current.remove(need)
-        } else {
-            current.add(need)
-        }
+        if (current.contains(need)) current.remove(need)
+        else current.add(need)
         _currentRealNeed.value = current
     }
 
     fun toggleAlternative(alternative: String) {
         val current = _currentAlternative.value.toMutableList()
-        if (current.contains(alternative)) {
-            current.remove(alternative)
-        } else {
-            current.add(alternative)
-        }
+        if (current.contains(alternative)) current.remove(alternative)
+        else current.add(alternative)
         _currentAlternative.value = current
     }
 
@@ -92,7 +195,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _currentFreeText.value = text
     }
 
-    // Save the complete entry to database
     fun saveEntry() {
         viewModelScope.launch {
             val entry = JournalEntry(
@@ -109,7 +211,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // Reset all current entry data for a new flow
     fun resetCurrentEntry() {
         _currentSituationContext.value = ""
         _currentFeelings.value = emptyList()
@@ -119,12 +220,10 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _currentFreeText.value = ""
     }
 
-    // Get single entry by ID
     fun getEntryById(entryId: Int): Flow<JournalEntry?> {
         return repository.getEntryById(entryId)
     }
 
-    // Delete entry
     fun deleteEntry(entry: JournalEntry) {
         viewModelScope.launch {
             repository.deleteEntry(entry)

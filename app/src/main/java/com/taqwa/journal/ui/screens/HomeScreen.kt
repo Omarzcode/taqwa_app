@@ -2,12 +2,12 @@ package com.taqwa.journal.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,21 +20,60 @@ import com.taqwa.journal.ui.theme.*
 @Composable
 fun HomeScreen(
     urgesDefeated: Int,
+    currentStreak: Int,
+    longestStreak: Int,
+    streakStatus: String,
+    milestoneMessage: String?,
+    totalRelapses: Int,
+    onDismissMilestone: () -> Unit,
     onUrgeClick: () -> Unit,
-    onPastEntriesClick: () -> Unit
+    onPastEntriesClick: () -> Unit,
+    onResetStreakClick: () -> Unit,
+    onRelapseHistoryClick: () -> Unit,
+    onPatternAnalysisClick: () -> Unit,
+    onPromiseWallClick: () -> Unit
 ) {
+    if (milestoneMessage != null) {
+        AlertDialog(
+            onDismissRequest = onDismissMilestone,
+            title = {
+                Text(
+                    text = "🎉 Milestone Reached!",
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            text = {
+                Text(
+                    text = milestoneMessage,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    lineHeight = 24.sp
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = onDismissMilestone) {
+                    Text("Alhamdulillah! 🤲", color = PrimaryLight)
+                }
+            },
+            containerColor = BackgroundCard
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Section - Bismillah
+        // Top Section
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 32.dp)
+            modifier = Modifier.padding(top = 24.dp)
         ) {
             Text(
                 text = "﷽",
@@ -58,98 +97,146 @@ fun HomeScreen(
             )
         }
 
-        // Middle Section - Stats & Urge Button
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Streak Section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = BackgroundCard),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            // Urges Defeated Counter
-            Card(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Text(text = "🔥 Current Streak", fontSize = 14.sp, color = TextGray)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = "🔥 Urges Defeated",
-                        fontSize = 16.sp,
-                        color = TextGray
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "$urgesDefeated",
-                        fontSize = 48.sp,
+                        text = "$currentStreak",
+                        fontSize = 56.sp,
                         fontWeight = FontWeight.Bold,
-                        color = AccentGold
+                        color = if (currentStreak > 0) AccentGold else TextGray
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (currentStreak == 1) "day" else "days",
+                        fontSize = 18.sp,
+                        color = TextGray,
+                        modifier = Modifier.padding(bottom = 10.dp)
                     )
                 }
-            }
+                Text(text = streakStatus, fontSize = 14.sp, color = PrimaryLight)
 
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Big Urge Button
-            Button(
-                onClick = onUrgeClick,
-                modifier = Modifier
-                    .size(200.dp)
-                    .clip(CircleShape),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = UrgeButtonRed
-                ),
-                shape = CircleShape,
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 8.dp
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider(
+                    color = BackgroundLight,
+                    modifier = Modifier.padding(horizontal = 32.dp)
                 )
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text(
-                        text = "🔴",
-                        fontSize = 32.sp
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "I'M HAVING\nAN URGE",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextWhite,
-                        textAlign = TextAlign.Center
-                    )
+                    StatItem("Urges Defeated", "$urgesDefeated", "🛡️")
+                    StatItem("Longest Streak", "$longestStreak days", "👑")
+                    StatItem("Relapses", "$totalRelapses", "📉")
                 }
             }
         }
 
-        // Bottom Section - Past Entries Button
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(bottom = 32.dp)
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Big Urge Button
+        Button(
+            onClick = onUrgeClick,
+            modifier = Modifier
+                .size(180.dp)
+                .clip(CircleShape),
+            colors = ButtonDefaults.buttonColors(containerColor = UrgeButtonRed),
+            shape = CircleShape,
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "🔴", fontSize = 28.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "I'M HAVING\nAN URGE",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextWhite,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Bottom buttons
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedButton(
                 onClick = onPastEntriesClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = PrimaryLight
-                ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    width = 1.dp
-                ),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryLight),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text(
-                    text = "📖  My Past Entries",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
+                Text("📖  My Past Entries", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            }
+
+            OutlinedButton(
+                onClick = onPatternAnalysisClick,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentGold),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("📊  My Patterns", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            }
+
+            OutlinedButton(
+                onClick = onPromiseWallClick,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentBlue),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("📝  My Promise Wall", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            }
+
+            if (totalRelapses > 0) {
+                OutlinedButton(
+                    onClick = onRelapseHistoryClick,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentOrange),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        "📉  Relapse History ($totalRelapses)",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            TextButton(
+                onClick = onResetStreakClick,
+                modifier = Modifier.fillMaxWidth().height(44.dp)
+            ) {
+                Text("😔  I relapsed... Reset streak", fontSize = 13.sp, color = TextMuted)
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+@Composable
+private fun StatItem(label: String, value: String, emoji: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = emoji, fontSize = 20.sp)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+        Text(text = label, fontSize = 11.sp, color = TextGray)
     }
 }
