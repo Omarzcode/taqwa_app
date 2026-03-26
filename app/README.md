@@ -495,3 +495,8 @@ SOFTWARE.
 
 *"But as for he who feared standing before his Lord and restrained the soul from desire — then indeed, Paradise will be his refuge."*
 — Surah An-Nazi'at 79:40-41
+
+---
+
+*
+</div>
