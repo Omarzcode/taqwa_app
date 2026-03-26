@@ -497,6 +497,5 @@ SOFTWARE.
 — Surah An-Nazi'at 79:40-41
 
 ---
-
 *
 </div>
