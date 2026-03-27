@@ -5,6 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.taqwa.journal.data.database.JournalDatabase
 import com.taqwa.journal.data.database.JournalEntry
+import com.taqwa.journal.data.preferences.DailyAyah
+import com.taqwa.journal.data.preferences.DailyQuranManager
+import com.taqwa.journal.data.preferences.OnboardingManager
 import com.taqwa.journal.data.preferences.PromiseManager
 import com.taqwa.journal.data.preferences.RelapseRecord
 import com.taqwa.journal.data.preferences.StreakManager
@@ -20,11 +23,15 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val repository: JournalRepository
     val streakManager: StreakManager
     val promiseManager: PromiseManager
+    private val dailyQuranManager: DailyQuranManager
+    private val onboardingManager: OnboardingManager
 
     val allEntries: Flow<List<JournalEntry>>
     val urgesDefeatedCount: Flow<Int>
 
-    // Streak state
+    private val _isOnboardingCompleted = MutableStateFlow(true)
+    val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
+
     private val _currentStreak = MutableStateFlow(0)
     val currentStreak: StateFlow<Int> = _currentStreak.asStateFlow()
 
@@ -43,7 +50,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val _relapseHistory = MutableStateFlow<List<RelapseRecord>>(emptyList())
     val relapseHistory: StateFlow<List<RelapseRecord>> = _relapseHistory.asStateFlow()
 
-    // Promise Wall state
     private val _promises = MutableStateFlow<List<String>>(emptyList())
     val promises: StateFlow<List<String>> = _promises.asStateFlow()
 
@@ -59,7 +65,9 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val _hasPromiseContent = MutableStateFlow(false)
     val hasPromiseContent: StateFlow<Boolean> = _hasPromiseContent.asStateFlow()
 
-    // Current entry being built during the flow
+    private val _dailyAyah = MutableStateFlow<DailyAyah?>(null)
+    val dailyAyah: StateFlow<DailyAyah?> = _dailyAyah.asStateFlow()
+
     private val _currentSituationContext = MutableStateFlow("")
     val currentSituationContext: StateFlow<String> = _currentSituationContext.asStateFlow()
 
@@ -87,6 +95,10 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
         streakManager = StreakManager(application)
         promiseManager = PromiseManager(application)
+        dailyQuranManager = DailyQuranManager(application)
+        onboardingManager = OnboardingManager(application)
+
+        _isOnboardingCompleted.value = onboardingManager.isOnboardingCompleted()
 
         if (streakManager.isFirstTime()) {
             streakManager.startNewStreak()
@@ -94,9 +106,18 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
         refreshStreakData()
         refreshPromiseData()
+        refreshDailyAyah()
     }
 
-    // Refresh streak data
+    fun completeOnboarding(whyQuitting: String, firstPromise: String, firstDua: String) {
+        if (whyQuitting.isNotBlank()) promiseManager.setWhyQuitting(whyQuitting)
+        if (firstPromise.isNotBlank()) promiseManager.addPromise(firstPromise)
+        if (firstDua.isNotBlank()) promiseManager.addDua(firstDua)
+        onboardingManager.setOnboardingCompleted()
+        _isOnboardingCompleted.value = true
+        refreshPromiseData()
+    }
+
     fun refreshStreakData() {
         _currentStreak.value = streakManager.getCurrentStreak()
         _longestStreak.value = streakManager.getLongestStreak()
@@ -106,7 +127,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _relapseHistory.value = streakManager.getRelapseHistory()
     }
 
-    // Refresh promise wall data
     fun refreshPromiseData() {
         _promises.value = promiseManager.getPromises()
         _whyQuitting.value = promiseManager.getWhyQuitting()
@@ -115,85 +135,47 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _hasPromiseContent.value = promiseManager.hasContent()
     }
 
-    // Streak functions
+    fun refreshDailyAyah() {
+        _dailyAyah.value = dailyQuranManager.getTodaysAyah()
+    }
+
     fun resetStreak(reason: String) {
         streakManager.resetStreak(reason)
         refreshStreakData()
     }
 
-    fun dismissMilestone() {
-        _milestoneMessage.value = null
-    }
+    fun dismissMilestone() { _milestoneMessage.value = null }
 
-    // Promise Wall functions
-    fun addPromise(promise: String) {
-        promiseManager.addPromise(promise)
-        refreshPromiseData()
-    }
+    fun addPromise(promise: String) { promiseManager.addPromise(promise); refreshPromiseData() }
+    fun deletePromise(index: Int) { promiseManager.deletePromise(index); refreshPromiseData() }
+    fun setWhyQuitting(why: String) { promiseManager.setWhyQuitting(why); refreshPromiseData() }
+    fun addDua(dua: String) { promiseManager.addDua(dua); refreshPromiseData() }
+    fun deleteDua(index: Int) { promiseManager.deleteDua(index); refreshPromiseData() }
+    fun addReminder(reminder: String) { promiseManager.addReminder(reminder); refreshPromiseData() }
+    fun deleteReminder(index: Int) { promiseManager.deleteReminder(index); refreshPromiseData() }
 
-    fun deletePromise(index: Int) {
-        promiseManager.deletePromise(index)
-        refreshPromiseData()
-    }
-
-    fun setWhyQuitting(why: String) {
-        promiseManager.setWhyQuitting(why)
-        refreshPromiseData()
-    }
-
-    fun addDua(dua: String) {
-        promiseManager.addDua(dua)
-        refreshPromiseData()
-    }
-
-    fun deleteDua(index: Int) {
-        promiseManager.deleteDua(index)
-        refreshPromiseData()
-    }
-
-    fun addReminder(reminder: String) {
-        promiseManager.addReminder(reminder)
-        refreshPromiseData()
-    }
-
-    fun deleteReminder(index: Int) {
-        promiseManager.deleteReminder(index)
-        refreshPromiseData()
-    }
-
-    // Entry functions
-    fun updateSituationContext(text: String) {
-        _currentSituationContext.value = text
-    }
+    fun updateSituationContext(text: String) { _currentSituationContext.value = text }
 
     fun toggleFeeling(feeling: String) {
         val current = _currentFeelings.value.toMutableList()
-        if (current.contains(feeling)) current.remove(feeling)
-        else current.add(feeling)
+        if (current.contains(feeling)) current.remove(feeling) else current.add(feeling)
         _currentFeelings.value = current
     }
 
     fun toggleRealNeed(need: String) {
         val current = _currentRealNeed.value.toMutableList()
-        if (current.contains(need)) current.remove(need)
-        else current.add(need)
+        if (current.contains(need)) current.remove(need) else current.add(need)
         _currentRealNeed.value = current
     }
 
     fun toggleAlternative(alternative: String) {
         val current = _currentAlternative.value.toMutableList()
-        if (current.contains(alternative)) current.remove(alternative)
-        else current.add(alternative)
+        if (current.contains(alternative)) current.remove(alternative) else current.add(alternative)
         _currentAlternative.value = current
     }
 
-    fun updateUrgeStrength(strength: Int) {
-        _currentUrgeStrength.value = strength
-    }
-
-    fun updateFreeText(text: String) {
-        _currentFreeText.value = text
-    }
+    fun updateUrgeStrength(strength: Int) { _currentUrgeStrength.value = strength }
+    fun updateFreeText(text: String) { _currentFreeText.value = text }
 
     fun saveEntry() {
         viewModelScope.launch {
@@ -220,13 +202,28 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _currentFreeText.value = ""
     }
 
-    fun getEntryById(entryId: Int): Flow<JournalEntry?> {
-        return repository.getEntryById(entryId)
-    }
+    fun getEntryById(entryId: Int): Flow<JournalEntry?> = repository.getEntryById(entryId)
 
     fun deleteEntry(entry: JournalEntry) {
+        viewModelScope.launch { repository.deleteEntry(entry) }
+    }
+
+    fun clearAllData() {
         viewModelScope.launch {
-            repository.deleteEntry(entry)
+            val database = JournalDatabase.getDatabase(getApplication())
+            database.clearAllTables()
+
+            val app = getApplication<Application>()
+            app.getSharedPreferences("taqwa_streak", 0).edit().clear().apply()
+            app.getSharedPreferences("taqwa_promises", 0).edit().clear().apply()
+            app.getSharedPreferences("taqwa_daily_quran", 0).edit().clear().apply()
+            app.getSharedPreferences("taqwa_onboarding", 0).edit().clear().apply()
+
+            streakManager.startNewStreak()
+            refreshStreakData()
+            refreshPromiseData()
+            refreshDailyAyah()
+            _isOnboardingCompleted.value = false
         }
     }
 }

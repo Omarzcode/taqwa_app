@@ -15,6 +15,7 @@ class StreakManager(context: Context) {
         private const val KEY_LONGEST_STREAK = "longest_streak"
         private const val KEY_TOTAL_RELAPSES = "total_relapses"
         private const val KEY_RELAPSE_HISTORY = "relapse_history"
+        private const val KEY_LAST_MILESTONE_SHOWN = "last_milestone_shown"
     }
 
     // Get current streak in days
@@ -34,29 +35,26 @@ class StreakManager(context: Context) {
     fun startNewStreak() {
         val today = LocalDate.now().toString()
         prefs.edit().putString(KEY_STREAK_START_DATE, today).apply()
+        // Reset milestone tracking for new streak
+        prefs.edit().putInt(KEY_LAST_MILESTONE_SHOWN, 0).apply()
     }
 
     // Reset streak (relapse)
     fun resetStreak(reason: String) {
-        // Save current streak if it's the longest
         val currentStreak = getCurrentStreak()
         val longestStreak = getLongestStreak()
         if (currentStreak > longestStreak) {
             prefs.edit().putInt(KEY_LONGEST_STREAK, currentStreak).apply()
         }
 
-        // Increment total relapses
         val totalRelapses = getTotalRelapses()
         prefs.edit().putInt(KEY_TOTAL_RELAPSES, totalRelapses + 1).apply()
 
-        // Save to relapse history
-        // Format: "date|||reason|||streakLost;;;date|||reason|||streakLost"
         val history = getRelapseHistoryRaw()
         val newEntry = "${LocalDate.now()}|||${reason}|||${currentStreak}"
         val updatedHistory = if (history.isEmpty()) newEntry else "$newEntry;;;$history"
         prefs.edit().putString(KEY_RELAPSE_HISTORY, updatedHistory).apply()
 
-        // Start new streak
         startNewStreak()
     }
 
@@ -93,10 +91,15 @@ class StreakManager(context: Context) {
         return prefs.getString(KEY_RELAPSE_HISTORY, "") ?: ""
     }
 
-    // Get milestone message if applicable
+    // Get milestone message ONLY if not shown before for this streak day
     fun getMilestoneMessage(): String? {
         val streak = getCurrentStreak()
-        return when (streak) {
+        val lastMilestoneShown = prefs.getInt(KEY_LAST_MILESTONE_SHOWN, 0)
+
+        // Only show if this milestone hasn't been shown yet
+        if (streak <= lastMilestoneShown) return null
+
+        val message = when (streak) {
             1 -> "🌱 Day 1 - Every journey starts with a single step!"
             3 -> "💪 3 Days - Your brain is starting to rewire!"
             7 -> "⭐ 1 Week! - Dopamine receptors are healing!"
@@ -109,6 +112,13 @@ class StreakManager(context: Context) {
             365 -> "🏅 1 YEAR! - You are FREE!"
             else -> null
         }
+
+        // If there's a message, mark it as shown
+        if (message != null) {
+            prefs.edit().putInt(KEY_LAST_MILESTONE_SHOWN, streak).apply()
+        }
+
+        return message
     }
 
     // Get streak status text
@@ -129,7 +139,6 @@ class StreakManager(context: Context) {
     }
 }
 
-// Data class for relapse records
 data class RelapseRecord(
     val date: String,
     val reason: String,

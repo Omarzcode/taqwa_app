@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taqwa.journal.data.preferences.DailyAyah
 import com.taqwa.journal.ui.theme.*
 
 @Composable
@@ -25,13 +26,16 @@ fun HomeScreen(
     streakStatus: String,
     milestoneMessage: String?,
     totalRelapses: Int,
+    dailyAyah: DailyAyah?,
     onDismissMilestone: () -> Unit,
     onUrgeClick: () -> Unit,
     onPastEntriesClick: () -> Unit,
     onResetStreakClick: () -> Unit,
     onRelapseHistoryClick: () -> Unit,
     onPatternAnalysisClick: () -> Unit,
-    onPromiseWallClick: () -> Unit
+    onPromiseWallClick: () -> Unit,
+    onCalendarClick: () -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     if (milestoneMessage != null) {
         AlertDialog(
@@ -46,16 +50,14 @@ fun HomeScreen(
             },
             text = {
                 Text(
-                    text = milestoneMessage,
-                    fontSize = 16.sp,
+                    text = milestoneMessage, fontSize = 16.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                    lineHeight = 24.sp
+                    modifier = Modifier.fillMaxWidth(), lineHeight = 24.sp
                 )
             },
             confirmButton = {
                 TextButton(onClick = onDismissMilestone) {
-                    Text("Alhamdulillah! 🤲", color = PrimaryLight)
+                    Text("Alhamdulillah! 🤲", color = VanillaCustard)
                 }
             },
             containerColor = BackgroundCard
@@ -73,31 +75,52 @@ fun HomeScreen(
         // Top Section
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 24.dp)
+            modifier = Modifier.padding(top = 16.dp)
         ) {
+            Text(text = "﷽", fontSize = 32.sp, color = TextWhite, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "﷽",
-                fontSize = 32.sp,
-                color = TextWhite,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Taqwa",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryLight,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "Your journey to purity",
-                fontSize = 14.sp,
-                color = TextGray,
-                textAlign = TextAlign.Center
+                text = "Taqwa", fontSize = 28.sp,
+                fontWeight = FontWeight.Bold, color = VanillaCustard
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Daily Ayah Card
+        if (dailyAyah != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = PrimaryDark.copy(alpha = 0.3f)
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "📖 Ayah of the Day", fontSize = 12.sp, color = TextGray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = dailyAyah.arabic, fontSize = 18.sp, color = VanillaCustard,
+                        textAlign = TextAlign.Center, lineHeight = 30.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "\"${dailyAyah.translation}\"", fontSize = 13.sp,
+                        color = TextLight, textAlign = TextAlign.Center, lineHeight = 20.sp
+                    )
+                    Text(
+                        text = "— ${dailyAyah.reference}",
+                        fontSize = 11.sp, color = TextGray
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Streak Section
         Card(
@@ -106,137 +129,146 @@ fun HomeScreen(
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
+                modifier = Modifier.fillMaxWidth().padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = "🔥 Current Streak", fontSize = 14.sp, color = TextGray)
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text = "$currentStreak",
-                        fontSize = 56.sp,
+                        text = "$currentStreak", fontSize = 48.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (currentStreak > 0) AccentGold else TextGray
+                        color = if (currentStreak > 0) VanillaCustard else TextGray
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = if (currentStreak == 1) "day" else "days",
-                        fontSize = 18.sp,
-                        color = TextGray,
-                        modifier = Modifier.padding(bottom = 10.dp)
+                        fontSize = 16.sp, color = TextGray,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
-                Text(text = streakStatus, fontSize = 14.sp, color = PrimaryLight)
+                Text(text = streakStatus, fontSize = 13.sp, color = PrimaryLight)
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider(
                     color = BackgroundLight,
                     modifier = Modifier.padding(horizontal = 32.dp)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItem("Urges Defeated", "$urgesDefeated", "🛡️")
-                    StatItem("Longest Streak", "$longestStreak days", "👑")
+                    StatItem("Defeated", "$urgesDefeated", "🛡️")
+                    StatItem("Best", "$longestStreak days", "👑")
                     StatItem("Relapses", "$totalRelapses", "📉")
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Big Urge Button
         Button(
             onClick = onUrgeClick,
-            modifier = Modifier
-                .size(180.dp)
-                .clip(CircleShape),
+            modifier = Modifier.size(170.dp).clip(CircleShape),
             colors = ButtonDefaults.buttonColors(containerColor = UrgeButtonRed),
             shape = CircleShape,
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "🔴", fontSize = 28.sp)
-                Spacer(modifier = Modifier.height(6.dp))
+                Text(text = "🔴", fontSize = 26.sp)
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "I'M HAVING\nAN URGE",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextWhite,
+                    text = "I'M HAVING\nAN URGE", fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold, color = TextWhite,
                     textAlign = TextAlign.Center
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Bottom buttons
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlinedButton(
                 onClick = onPastEntriesClick,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryLight),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(14.dp)
             ) {
-                Text("📖  My Past Entries", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("📖  My Past Entries", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
+
+            OutlinedButton(
+                onClick = onCalendarClick,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentGreen),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("📅  My Calendar", fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
 
             OutlinedButton(
                 onClick = onPatternAnalysisClick,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentGold),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VanillaCustard),
+                shape = RoundedCornerShape(14.dp)
             ) {
-                Text("📊  My Patterns", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("📊  My Patterns", fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
 
             OutlinedButton(
                 onClick = onPromiseWallClick,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentBlue),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(14.dp)
             ) {
-                Text("📝  My Promise Wall", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("📝  My Promise Wall", fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
 
             if (totalRelapses > 0) {
                 OutlinedButton(
                     onClick = onRelapseHistoryClick,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentOrange),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
                         "📉  Relapse History ($totalRelapses)",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium
+                        fontSize = 14.sp, fontWeight = FontWeight.Medium
                     )
                 }
             }
 
+            OutlinedButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextGray),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("⚙️  Settings", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
+
             TextButton(
                 onClick = onResetStreakClick,
-                modifier = Modifier.fillMaxWidth().height(44.dp)
+                modifier = Modifier.fillMaxWidth().height(40.dp)
             ) {
-                Text("😔  I relapsed... Reset streak", fontSize = 13.sp, color = TextMuted)
+                Text("😔  I relapsed... Reset streak", fontSize = 12.sp, color = TextMuted)
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
 @Composable
 private fun StatItem(label: String, value: String, emoji: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = emoji, fontSize = 20.sp)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-        Text(text = label, fontSize = 11.sp, color = TextGray)
+        Text(text = emoji, fontSize = 18.sp)
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextWhite)
+        Text(text = label, fontSize = 10.sp, color = TextGray)
     }
 }
