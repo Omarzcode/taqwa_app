@@ -1,29 +1,29 @@
 package com.taqwa.journal.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.database.JournalEntry
+import com.taqwa.journal.ui.components.EmptyState
+import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PastEntriesScreen(
     entries: List<JournalEntry>,
@@ -36,74 +36,49 @@ fun PastEntriesScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        // Top Bar
-        TopAppBar(
-            title = {
-                Text(
-                    text = "📖  My Journal",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = BackgroundDark,
-                titleContentColor = TextWhite
-            )
+        TaqwaTopBar(
+            title = "📖  My Journal",
+            onBack = onBack
         )
 
         if (entries.isEmpty()) {
-            // Empty state
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "📝",
-                        fontSize = 64.sp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No entries yet",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextWhite
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Your journal entries will appear here\nafter you complete an urge flow.",
-                        fontSize = 14.sp,
-                        color = TextGray,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 22.sp
-                    )
-                }
-            }
+            EmptyState(
+                emoji = "📝",
+                title = "No entries yet",
+                description = "Your journal entries will appear here\nafter you complete an urge flow."
+            )
         } else {
-            // Entries list
+            // Entry count header
+            Text(
+                text = "${entries.size} ${if (entries.size == 1) "entry" else "entries"}",
+                style = TaqwaType.caption,
+                color = TextMuted,
+                modifier = Modifier.padding(
+                    horizontal = TaqwaDimens.screenPaddingHorizontal,
+                    vertical = TaqwaDimens.spaceS
+                )
+            )
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 12.dp)
+                    .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+                verticalArrangement = Arrangement.spacedBy(TaqwaDimens.cardSpacing),
+                contentPadding = PaddingValues(bottom = TaqwaDimens.spaceL)
             ) {
-                items(entries) { entry ->
-                    EntryCard(
-                        entry = entry,
-                        onClick = { onEntryClick(entry.id) },
-                        onDelete = { onDeleteEntry(entry) }
-                    )
+                itemsIndexed(entries) { index, entry ->
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn() + slideInVertically(
+                            initialOffsetY = { it / 4 }
+                        )
+                    ) {
+                        EntryCard(
+                            entry = entry,
+                            onClick = { onEntryClick(entry.id) },
+                            onDelete = { onDeleteEntry(entry) }
+                        )
+                    }
                 }
             }
         }
@@ -126,17 +101,15 @@ private fun EntryCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = BackgroundCard
-        ),
-        shape = RoundedCornerShape(16.dp)
+        colors = CardDefaults.cardColors(containerColor = BackgroundCard),
+        shape = RoundedCornerShape(TaqwaDimens.cardCornerRadius)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(TaqwaDimens.spaceL)
         ) {
-            // Date and time row
+            // Date and urge strength row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -145,44 +118,23 @@ private fun EntryCard(
                 Column {
                     Text(
                         text = dateFormat.format(date),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = TaqwaType.cardTitle,
                         color = TextWhite
                     )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXS))
                     Text(
                         text = timeFormat.format(date),
-                        fontSize = 13.sp,
+                        style = TaqwaType.bodySmall,
                         color = TextGray
                     )
                 }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceS)
                 ) {
                     // Urge strength badge
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = when {
-                                entry.urgeStrength <= 3 -> AccentGreen.copy(alpha = 0.2f)
-                                entry.urgeStrength <= 6 -> AccentOrange.copy(alpha = 0.2f)
-                                else -> AccentRed.copy(alpha = 0.2f)
-                            }
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            text = "💢 ${entry.urgeStrength}/10",
-                            fontSize = 12.sp,
-                            color = when {
-                                entry.urgeStrength <= 3 -> AccentGreen
-                                entry.urgeStrength <= 6 -> AccentOrange
-                                else -> AccentRed
-                            },
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    UrgeStrengthBadge(strength = entry.urgeStrength)
 
                     // Delete button
                     IconButton(
@@ -199,25 +151,25 @@ private fun EntryCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
             // Feelings
             if (entry.feelings.isNotEmpty()) {
                 Text(
                     text = entry.feelings.replace(",", "  •  "),
-                    fontSize = 13.sp,
+                    style = TaqwaType.bodySmall,
                     color = PrimaryLight,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
             }
 
             // Free text preview
             if (entry.freeText.isNotEmpty()) {
                 Text(
                     text = entry.freeText,
-                    fontSize = 13.sp,
+                    style = TaqwaType.bodySmall,
                     color = TextGray,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -227,18 +179,23 @@ private fun EntryCard(
         }
     }
 
-    // Delete confirmation dialog
+    // Delete dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = {
                 Text(
                     text = "Delete Entry?",
-                    fontWeight = FontWeight.Bold
+                    style = TaqwaType.sectionTitle,
+                    color = TextWhite
                 )
             },
             text = {
-                Text("This entry will be permanently deleted.")
+                Text(
+                    "This entry will be permanently deleted.",
+                    style = TaqwaType.body,
+                    color = TextGray
+                )
             },
             confirmButton = {
                 TextButton(
@@ -252,10 +209,36 @@ private fun EntryCard(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = TextLight)
                 }
             },
             containerColor = BackgroundCard
+        )
+    }
+}
+
+@Composable
+private fun UrgeStrengthBadge(strength: Int) {
+    val color = when {
+        strength <= 3 -> AccentGreen
+        strength <= 6 -> AccentOrange
+        else -> AccentRed
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.15f)
+        ),
+        shape = RoundedCornerShape(TaqwaDimens.spaceS)
+    ) {
+        Text(
+            text = "💢 $strength/10",
+            style = TaqwaType.caption.copy(fontWeight = FontWeight.Bold),
+            color = color,
+            modifier = Modifier.padding(
+                horizontal = TaqwaDimens.spaceS,
+                vertical = TaqwaDimens.spaceXS
+            )
         )
     }
 }

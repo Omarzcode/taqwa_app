@@ -1,5 +1,6 @@
 package com.taqwa.journal.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,10 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaCard
 import com.taqwa.journal.ui.theme.*
 
 @Composable
@@ -30,22 +34,29 @@ fun OnboardingScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(24.dp),
+            .statusBarsPadding()
+            .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         // Progress dots
         Row(
-            modifier = Modifier.padding(top = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(top = TaqwaDimens.spaceL),
+            horizontalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceS)
         ) {
             for (i in 0..4) {
+                val isActive = i <= currentStep
+                val isCurrent = i == currentStep
+
                 Box(
                     modifier = Modifier
-                        .size(if (i == currentStep) 10.dp else 8.dp)
-                        .clip(CircleShape)
+                        .size(
+                            width = if (isCurrent) 24.dp else if (isActive) 10.dp else 8.dp,
+                            height = if (isCurrent) 10.dp else 8.dp
+                        )
+                        .clip(RoundedCornerShape(5.dp))
                         .background(
-                            if (i <= currentStep) VanillaCustard
+                            if (isActive) VanillaCustard
                             else BackgroundLight
                         )
                 )
@@ -57,7 +68,7 @@ fun OnboardingScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
+                .padding(vertical = TaqwaDimens.spaceL)
         ) {
             when (currentStep) {
                 0 -> WelcomeStep()
@@ -72,8 +83,9 @@ fun OnboardingScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .navigationBarsPadding()
+                .padding(bottom = TaqwaDimens.spaceL),
+            horizontalArrangement = Arrangement.spacedBy(TaqwaDimens.cardSpacing)
         ) {
             if (currentStep > 0) {
                 OutlinedButton(
@@ -84,9 +96,12 @@ fun OnboardingScreen(
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = TextLight
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
                 ) {
-                    Text("← Back", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        "←  Back",
+                        style = TaqwaType.button
+                    )
                 }
             }
 
@@ -104,16 +119,16 @@ fun OnboardingScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (currentStep == 4) AccentGreen else PrimaryMedium
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
             ) {
                 Text(
                     text = when (currentStep) {
-                        0 -> "Let's Begin ➜"
-                        4 -> "Start My Journey ✨"
-                        else -> "Next ➜"
+                        0 -> "Let's Begin  ➜"
+                        4 -> "Start My Journey  ✨"
+                        else -> "Next  ➜"
                     },
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
+                    style = TaqwaType.button.copy(fontSize = 15.sp),
+                    color = TextWhite
                 )
             }
         }
@@ -125,6 +140,18 @@ fun OnboardingScreen(
 // ========================
 @Composable
 private fun WelcomeStep() {
+    // Gentle pulse on mosque emoji
+    val infiniteTransition = rememberInfiniteTransition(label = "welcome")
+    val mosqueScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "mosque_scale"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -132,75 +159,89 @@ private fun WelcomeStep() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "﷽", fontSize = 36.sp, color = TextWhite)
+        Text(
+            text = "﷽",
+            style = TaqwaType.arabicLarge.copy(fontSize = 28.sp),
+            color = TextLight
+        )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-        Text(text = "🕌", fontSize = 72.sp)
+        Text(
+            text = "🕌",
+            fontSize = 64.sp,
+            modifier = Modifier.scale(mosqueScale)
+        )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
         Text(
             text = "Welcome to Taqwa",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
+            style = TaqwaType.screenTitle.copy(fontSize = 26.sp),
             color = VanillaCustard,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
         Text(
-            text = "Your personal companion in the journey\nto overcome porn addiction.",
-            fontSize = 16.sp,
+            text = "Your personal companion in the journey\nto overcome addiction.",
+            style = TaqwaType.body.copy(lineHeight = 26.sp),
             color = TextLight,
-            textAlign = TextAlign.Center,
-            lineHeight = 26.sp
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = PrimaryDark.copy(alpha = 0.3f)
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
+        TaqwaAccentCard(accentColor = PrimaryDark, alpha = 0.3f) {
             Column(
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "\"وَأَمَّا مَنْ خَافَ مَقَامَ رَبِّهِ وَنَهَى النَّفْسَ عَنِ الْهَوَىٰ فَإِنَّ الْجَنَّةَ هِيَ الْمَأْوَىٰ\"",
-                    fontSize = 16.sp,
+                    text = "وَأَمَّا مَنْ خَافَ مَقَامَ رَبِّهِ وَنَهَى النَّفْسَ عَنِ الْهَوَىٰ\nفَإِنَّ الْجَنَّةَ هِيَ الْمَأْوَىٰ",
+                    style = TaqwaType.arabicMedium.copy(lineHeight = 30.sp),
                     color = VanillaCustard,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 28.sp,
-                    fontWeight = FontWeight.Bold
+                    textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                 Text(
                     text = "\"But as for he who feared standing before his Lord\nand restrained the soul from desire —\nthen indeed, Paradise will be his refuge.\"",
-                    fontSize = 13.sp,
+                    style = TaqwaType.caption.copy(lineHeight = 20.sp),
                     color = TextLight,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 22.sp
+                    textAlign = TextAlign.Center
                 )
                 Text(
                     text = "— An-Nazi'at 79:40-41",
-                    fontSize = 11.sp,
+                    style = TaqwaType.captionSmall,
                     color = TextGray
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
+        // Privacy badges
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceL),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            PrivacyBadge("🔒", "Private")
+            PrivacyBadge("📵", "Offline")
+            PrivacyBadge("👤", "No Accounts")
+        }
+    }
+}
+
+@Composable
+private fun PrivacyBadge(emoji: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = emoji, fontSize = 18.sp)
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXS))
         Text(
-            text = "🔒 100% Private • Offline • No Accounts",
-            fontSize = 12.sp,
-            color = TextGray
+            text = label,
+            style = TaqwaType.captionSmall,
+            color = TextMuted
         )
     }
 }
@@ -216,79 +257,35 @@ private fun HowItWorksStep() {
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "🧠", fontSize = 56.sp)
+        Text(text = "🧠", fontSize = 48.sp)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
         Text(
             text = "How Taqwa Works",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            style = TaqwaType.screenTitle,
             color = VanillaCustard,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
         Text(
             text = "When an urge hits, your brain goes on autopilot.\nTaqwa interrupts that autopilot.",
-            fontSize = 14.sp,
+            style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
             color = TextGray,
-            textAlign = TextAlign.Center,
-            lineHeight = 22.sp
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-        // Steps
-        FlowStepItem(
-            number = "1",
-            emoji = "⏸️",
-            title = "STOP & BREATHE",
-            description = "Interrupts the autopilot brain with guided breathing"
-        )
-
-        FlowStepItem(
-            number = "2",
-            emoji = "❌",
-            title = "REALITY CHECK",
-            description = "Reminds you of the truth you forgot in the moment"
-        )
-
-        FlowStepItem(
-            number = "3",
-            emoji = "🤲",
-            title = "ISLAMIC REMINDER",
-            description = "Reconnects you with Allah and your values"
-        )
-
-        FlowStepItem(
-            number = "4",
-            emoji = "📝",
-            title = "YOUR OWN WORDS",
-            description = "Shows your promises, duas, and reasons"
-        )
-
-        FlowStepItem(
-            number = "5",
-            emoji = "📅",
-            title = "FUTURE SELF",
-            description = "Visualize the consequences of both paths"
-        )
-
-        FlowStepItem(
-            number = "6",
-            emoji = "📋",
-            title = "REFLECT & JOURNAL",
-            description = "Understand your triggers through guided questions"
-        )
-
-        FlowStepItem(
-            number = "7",
-            emoji = "🏆",
-            title = "VICTORY",
-            description = "Celebrate defeating another urge!"
-        )
+        FlowStepItem("1", "⏸️", "STOP & BREATHE", "Interrupts the autopilot brain with guided breathing")
+        FlowStepItem("2", "❌", "REALITY CHECK", "Reminds you of the truth you forgot in the moment")
+        FlowStepItem("3", "🤲", "ISLAMIC REMINDER", "Reconnects you with Allah and your values")
+        FlowStepItem("4", "📝", "YOUR OWN WORDS", "Shows your promises, duas, and reasons")
+        FlowStepItem("5", "🔮", "FUTURE SELF", "Visualize the consequences of both paths")
+        FlowStepItem("6", "✍️", "REFLECT & JOURNAL", "Understand your triggers through guided questions")
+        FlowStepItem("7", "🏆", "VICTORY", "Celebrate defeating another urge!")
     }
 }
 
@@ -302,39 +299,37 @@ private fun FlowStepItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = TaqwaDimens.spaceXS),
         verticalAlignment = Alignment.Top
     ) {
         // Number circle
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(32.dp)
+                .size(30.dp)
                 .clip(CircleShape)
                 .background(PrimaryMedium)
         ) {
             Text(
                 text = number,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                style = TaqwaType.caption.copy(fontWeight = FontWeight.Bold),
                 color = TextWhite
             )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(TaqwaDimens.spaceM))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "$emoji $title",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                text = "$emoji  $title",
+                style = TaqwaType.body.copy(fontWeight = FontWeight.Bold),
                 color = TextWhite
             )
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXS))
             Text(
                 text = description,
-                fontSize = 13.sp,
-                color = TextGray,
-                lineHeight = 18.sp
+                style = TaqwaType.bodySmall.copy(lineHeight = 18.sp),
+                color = TextGray
             )
         }
     }
@@ -354,29 +349,27 @@ private fun WhyQuittingStep(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "🎯", fontSize = 56.sp)
+        Text(text = "🎯", fontSize = 48.sp)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
         Text(
             text = "Why Are You Quitting?",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            style = TaqwaType.screenTitle,
             color = VanillaCustard,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
         Text(
             text = "This is your anchor. When the storm hits,\nthis will keep you grounded.",
-            fontSize = 14.sp,
+            style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
             color = TextGray,
-            textAlign = TextAlign.Center,
-            lineHeight = 22.sp
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
         OutlinedTextField(
             value = text,
@@ -393,6 +386,7 @@ private fun WhyQuittingStep(
                             "• For my mental health and clarity\n" +
                             "• For my studies and career\n" +
                             "• To be the man I want to be",
+                    style = TaqwaType.bodySmall,
                     color = TextMuted
                 )
             },
@@ -403,14 +397,14 @@ private fun WhyQuittingStep(
                 focusedTextColor = TextWhite,
                 unfocusedTextColor = TextWhite
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(TaqwaDimens.cardCornerRadius)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
         Text(
             text = "💡 You can always edit this later in Promise Wall",
-            fontSize = 12.sp,
+            style = TaqwaType.captionSmall,
             color = TextMuted
         )
     }
@@ -430,29 +424,27 @@ private fun FirstPromiseStep(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "💪", fontSize = 56.sp)
+        Text(text = "💪", fontSize = 48.sp)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
         Text(
             text = "Make a Promise",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            style = TaqwaType.screenTitle,
             color = VanillaCustard,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
         Text(
             text = "Make one promise to yourself right now.\nThis will be shown to you during urges.",
-            fontSize = 14.sp,
+            style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
             color = TextGray,
-            textAlign = TextAlign.Center,
-            lineHeight = 22.sp
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
         OutlinedTextField(
             value = text,
@@ -467,6 +459,7 @@ private fun FirstPromiseStep(
                             "• I will never let this control me again\n" +
                             "• I will choose discipline over regret\n" +
                             "• I will become someone I'm proud of",
+                    style = TaqwaType.bodySmall,
                     color = TextMuted
                 )
             },
@@ -477,14 +470,14 @@ private fun FirstPromiseStep(
                 focusedTextColor = TextWhite,
                 unfocusedTextColor = TextWhite
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(TaqwaDimens.cardCornerRadius)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
         Text(
             text = "💡 You can skip this and add later",
-            fontSize = 12.sp,
+            style = TaqwaType.captionSmall,
             color = TextMuted
         )
     }
@@ -504,29 +497,27 @@ private fun FirstDuaStep(
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "🤲", fontSize = 56.sp)
+        Text(text = "🤲", fontSize = 48.sp)
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
         Text(
             text = "Write a Personal Dua",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            style = TaqwaType.screenTitle,
             color = VanillaCustard,
             textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
         Text(
             text = "A dua from your heart.\nAllah hears you right now.",
-            fontSize = 14.sp,
+            style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
             color = TextGray,
-            textAlign = TextAlign.Center,
-            lineHeight = 22.sp
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
         OutlinedTextField(
             value = text,
@@ -541,6 +532,7 @@ private fun FirstDuaStep(
                             "• Ya Allah, give me the strength to resist\n" +
                             "• Ya Allah, purify my heart and my eyes\n" +
                             "• Ya Allah, make me among the patient",
+                    style = TaqwaType.bodySmall,
                     color = TextMuted
                 )
             },
@@ -551,45 +543,37 @@ private fun FirstDuaStep(
                 focusedTextColor = TextWhite,
                 unfocusedTextColor = TextWhite
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(TaqwaDimens.cardCornerRadius)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = PrimaryDark.copy(alpha = 0.3f)
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
+        TaqwaAccentCard(accentColor = PrimaryDark, alpha = 0.3f) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "You're about to start a new chapter.",
-                    fontSize = 15.sp,
+                    style = TaqwaType.body.copy(fontWeight = FontWeight.Medium),
                     color = TextLight,
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Medium
+                    textAlign = TextAlign.Center
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                 Text(
                     text = "Every day you resist is a victory.\nEvery urge you defeat makes you stronger.\nAllah is with you in this battle.",
-                    fontSize = 13.sp,
+                    style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
                     color = TextGray,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 22.sp
+                    textAlign = TextAlign.Center
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
         Text(
             text = "💡 You can skip this and add later",
-            fontSize = 12.sp,
+            style = TaqwaType.captionSmall,
             color = TextMuted
         )
     }

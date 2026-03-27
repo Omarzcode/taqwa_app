@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,11 +14,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.preferences.RelapseRecord
+import com.taqwa.journal.ui.components.EmptyState
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RelapseHistoryScreen(
     relapseHistory: List<RelapseRecord>,
@@ -32,90 +33,44 @@ fun RelapseHistoryScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        // Top Bar
-        TopAppBar(
-            title = {
-                Text(
-                    text = "📉  Relapse History",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = BackgroundDark,
-                titleContentColor = TextWhite
-            )
+        TaqwaTopBar(
+            title = "📉  Relapse History",
+            onBack = onBack
         )
 
         if (relapseHistory.isEmpty()) {
-            // Empty state
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "🏆",
-                        fontSize = 64.sp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No relapses recorded",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextWhite
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Keep going strong!",
-                        fontSize = 14.sp,
-                        color = TextGray
-                    )
-                }
-            }
+            EmptyState(
+                emoji = "🏆",
+                title = "No relapses recorded",
+                description = "Keep going strong!\nMay Allah keep you steadfast."
+            )
         } else {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 12.dp)
+                    .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+                verticalArrangement = Arrangement.spacedBy(TaqwaDimens.cardSpacing),
+                contentPadding = PaddingValues(
+                    top = TaqwaDimens.spaceS,
+                    bottom = TaqwaDimens.spaceL
+                )
             ) {
-                // Summary card
+                // Summary
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = BackgroundCard
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
+                    TaqwaCard {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
                                 text = "Total Relapses: $totalRelapses",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = TaqwaType.sectionTitle,
                                 color = AccentOrange
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                             Text(
                                 text = "Every relapse is a lesson.\nStudy your patterns. Learn. Grow.",
-                                fontSize = 13.sp,
+                                style = TaqwaType.bodySmall,
                                 color = TextGray,
                                 textAlign = TextAlign.Center,
                                 lineHeight = 20.sp
@@ -132,40 +87,29 @@ fun RelapseHistoryScreen(
                     )
                 }
 
-                // Bottom encouragement
+                // Encouragement
                 item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = PrimaryDark.copy(alpha = 0.3f)
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
+                    TaqwaAccentCard(accentColor = PrimaryDark, alpha = 0.3f) {
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
                                 text = "وَلَا تَيْأَسُوا مِن رَّوْحِ اللَّهِ",
-                                fontSize = 18.sp,
-                                color = AccentGold,
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold
+                                style = TaqwaType.arabicMedium,
+                                color = VanillaCustard,
+                                textAlign = TextAlign.Center
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                             Text(
                                 text = "\"And do not despair of the mercy of Allah.\"",
-                                fontSize = 14.sp,
+                                style = TaqwaType.bodySmall,
                                 color = TextLight,
                                 textAlign = TextAlign.Center
                             )
                             Text(
                                 text = "— Surah Yusuf 12:87",
-                                fontSize = 12.sp,
+                                style = TaqwaType.captionSmall,
                                 color = TextGray
                             )
                         }
@@ -188,19 +132,9 @@ private fun RelapseCard(
         record.date
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = BackgroundCard
-        ),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Header row
+    TaqwaCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -208,43 +142,40 @@ private fun RelapseCard(
             ) {
                 Text(
                     text = "Relapse #$number",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = TaqwaType.cardTitle,
                     color = AccentOrange
                 )
                 Text(
                     text = formattedDate,
-                    fontSize = 13.sp,
+                    style = TaqwaType.bodySmall,
                     color = TextGray
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
             // Streak lost
             if (record.streakLost > 0) {
                 Text(
                     text = "📉 Lost a ${record.streakLost}-day streak",
-                    fontSize = 14.sp,
+                    style = TaqwaType.body,
                     color = TextLight
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
             }
 
             // Reason
             if (record.reason.isNotEmpty()) {
                 Text(
                     text = "💭 Reflection:",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    style = TaqwaType.bodySmall.copy(fontWeight = FontWeight.Medium),
                     color = PrimaryLight
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXS))
                 Text(
                     text = record.reason,
-                    fontSize = 14.sp,
-                    color = TextGray,
-                    lineHeight = 20.sp
+                    style = TaqwaType.body.copy(lineHeight = 20.sp),
+                    color = TextGray
                 )
             }
         }

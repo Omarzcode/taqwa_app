@@ -5,24 +5,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.database.JournalEntry
+import com.taqwa.journal.ui.components.EmptyState
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EntryDetailScreen(
     entry: JournalEntry?,
@@ -33,40 +30,17 @@ fun EntryDetailScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        // Top Bar
-        TopAppBar(
-            title = {
-                Text(
-                    text = "📖  Entry Details",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = BackgroundDark,
-                titleContentColor = TextWhite
-            )
+        TaqwaTopBar(
+            title = "📖  Entry Details",
+            onBack = onBack
         )
 
         if (entry == null) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Entry not found",
-                    color = TextGray,
-                    fontSize = 16.sp
-                )
-            }
+            EmptyState(
+                emoji = "🔍",
+                title = "Entry not found",
+                description = "This entry may have been deleted."
+            )
         } else {
             val dateFormat = SimpleDateFormat("EEEE, MMM dd, yyyy", Locale.getDefault())
             val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
@@ -76,66 +50,63 @@ fun EntryDetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+                verticalArrangement = Arrangement.spacedBy(TaqwaDimens.cardSpacing)
             ) {
-                // Date & Time header
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+
+                // Header card
+                TaqwaCard {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Text(text = "🏆", fontSize = 32.sp)
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                         Text(
-                            text = "🏆 Urge Defeated",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "Urge Defeated",
+                            style = TaqwaType.sectionTitle,
                             color = VictoryGreenLight
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                         Text(
                             text = dateFormat.format(date),
-                            fontSize = 16.sp,
-                            color = TextWhite,
-                            fontWeight = FontWeight.Medium
+                            style = TaqwaType.cardTitle,
+                            color = TextWhite
                         )
                         Text(
                             text = timeFormat.format(date),
-                            fontSize = 14.sp,
+                            style = TaqwaType.bodySmall,
                             color = TextGray
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+
+                        // Urge strength badge
+                        val strengthColor = when {
+                            entry.urgeStrength <= 3 -> AccentGreen
+                            entry.urgeStrength <= 6 -> AccentOrange
+                            else -> AccentRed
+                        }
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = when {
-                                    entry.urgeStrength <= 3 -> AccentGreen.copy(alpha = 0.2f)
-                                    entry.urgeStrength <= 6 -> AccentOrange.copy(alpha = 0.2f)
-                                    else -> AccentRed.copy(alpha = 0.2f)
-                                }
+                                containerColor = strengthColor.copy(alpha = 0.15f)
                             ),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(TaqwaDimens.spaceS)
                         ) {
                             Text(
                                 text = "Urge Strength: ${entry.urgeStrength}/10",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = when {
-                                    entry.urgeStrength <= 3 -> AccentGreen
-                                    entry.urgeStrength <= 6 -> AccentOrange
-                                    else -> AccentRed
-                                },
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                                style = TaqwaType.body.copy(fontWeight = FontWeight.Bold),
+                                color = strengthColor,
+                                modifier = Modifier.padding(
+                                    horizontal = TaqwaDimens.spaceL,
+                                    vertical = TaqwaDimens.spaceS
+                                )
                             )
                         }
                     }
                 }
 
-                // Q1: Situation
+                // Detail sections
                 if (entry.situationContext.isNotEmpty()) {
                     DetailSection(
                         icon = "📍",
@@ -144,7 +115,6 @@ fun EntryDetailScreen(
                     )
                 }
 
-                // Q2: Feelings
                 if (entry.feelings.isNotEmpty()) {
                     DetailSection(
                         icon = "💭",
@@ -153,7 +123,6 @@ fun EntryDetailScreen(
                     )
                 }
 
-                // Q3: Real Need
                 if (entry.realNeed.isNotEmpty()) {
                     DetailSection(
                         icon = "🎯",
@@ -162,7 +131,6 @@ fun EntryDetailScreen(
                     )
                 }
 
-                // Q4: Alternative Chosen
                 if (entry.alternativeChosen.isNotEmpty()) {
                     DetailSection(
                         icon = "🔄",
@@ -171,7 +139,6 @@ fun EntryDetailScreen(
                     )
                 }
 
-                // Q6: Free Text
                 if (entry.freeText.isNotEmpty()) {
                     DetailSection(
                         icon = "✍️",
@@ -180,7 +147,7 @@ fun EntryDetailScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
             }
         }
     }
@@ -192,37 +159,22 @@ private fun DetailSection(
     title: String,
     content: String
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = icon,
-                    fontSize = 20.sp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+    TaqwaCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = icon, fontSize = 18.sp)
+                Spacer(modifier = Modifier.width(TaqwaDimens.spaceS))
                 Text(
                     text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    style = TaqwaType.cardTitle,
                     color = PrimaryLight
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
             Text(
                 text = content,
-                fontSize = 15.sp,
-                color = TextLight,
-                lineHeight = 24.sp
+                style = TaqwaType.body.copy(lineHeight = 24.sp),
+                color = TextLight
             )
         }
     }

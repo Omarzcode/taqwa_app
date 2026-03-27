@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,9 +16,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PromiseWallScreen(
     promises: List<String>,
@@ -46,74 +47,39 @@ fun PromiseWallScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        // Top Bar
-        TopAppBar(
-            title = {
-                Text(
-                    text = "📝  My Promise Wall",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = BackgroundDark,
-                titleContentColor = TextWhite
-            )
+        TaqwaTopBar(
+            title = "📝  My Promise Wall",
+            onBack = onBack
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+            verticalArrangement = Arrangement.spacedBy(TaqwaDimens.cardSpacing)
         ) {
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+
             // Info card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = PrimaryDark.copy(alpha = 0.3f)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            TaqwaAccentCard(accentColor = PrimaryDark, alpha = 0.3f) {
                 Text(
                     text = "Your own words are the most powerful weapon against urges. Write your promises, reasons, and duas here. They will be shown to you during the intervention flow.",
-                    fontSize = 13.sp,
+                    style = TaqwaType.bodySmall.copy(lineHeight = 20.sp),
                     color = TextLight,
-                    lineHeight = 20.sp,
-                    modifier = Modifier.padding(16.dp),
                     textAlign = TextAlign.Center
                 )
             }
 
-            // ========================
-            // WHY I'M QUITTING
-            // ========================
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
+            // Why I'm Quitting
+            TaqwaCard {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "🎯 Why I'm Quitting",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AccentGold
+                        text = "🎯  Why I'm Quitting",
+                        style = TaqwaType.sectionTitle,
+                        color = VanillaCustard
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
                     if (editingWhy || whyQuitting.isEmpty()) {
                         OutlinedTextField(
@@ -124,7 +90,8 @@ fun PromiseWallScreen(
                                 .height(120.dp),
                             placeholder = {
                                 Text(
-                                    "Why are you quitting? What's your motivation?\n\ne.g., For my relationship with Allah, for my future wife, for my mental health, for my studies...",
+                                    "Why are you quitting? What's your motivation?\n\ne.g., For my relationship with Allah, for my future wife, for my mental health...",
+                                    style = TaqwaType.bodySmall,
                                     color = TextMuted
                                 )
                             },
@@ -135,9 +102,9 @@ fun PromiseWallScreen(
                                 focusedTextColor = TextWhite,
                                 unfocusedTextColor = TextWhite
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(TaqwaDimens.buttonSmallCornerRadius)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                         Button(
                             onClick = {
                                 onSetWhyQuitting(whyText)
@@ -146,35 +113,36 @@ fun PromiseWallScreen(
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PrimaryMedium
                             ),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(TaqwaDimens.buttonSmallCornerRadius)
                         ) {
-                            Text("Save")
+                            Text("Save", style = TaqwaType.button, color = TextWhite)
                         }
                     } else {
                         Text(
                             text = "\"$whyQuitting\"",
-                            fontSize = 15.sp,
-                            color = TextLight,
-                            lineHeight = 24.sp
+                            style = TaqwaType.body.copy(lineHeight = 24.sp),
+                            color = TextLight
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                         TextButton(
                             onClick = {
                                 whyText = whyQuitting
                                 editingWhy = true
                             }
                         ) {
-                            Text("Edit ✏️", color = PrimaryLight)
+                            Text(
+                                "Edit ✏️",
+                                style = TaqwaType.button,
+                                color = PrimaryLight
+                            )
                         }
                     }
                 }
             }
 
-            // ========================
-            // MY PROMISES
-            // ========================
-            SectionCard(
-                title = "💪 My Promises",
+            // Promises
+            PromiseSectionCard(
+                title = "💪  My Promises",
                 emoji = "💪",
                 items = promises,
                 onAdd = {
@@ -183,15 +151,12 @@ fun PromiseWallScreen(
                     showAddDialog = true
                 },
                 onDelete = onDeletePromise,
-                placeholder = "I promise myself that...",
                 emptyText = "Add promises you've made to yourself"
             )
 
-            // ========================
-            // MY DUAS
-            // ========================
-            SectionCard(
-                title = "🤲 My Duas",
+            // Duas
+            PromiseSectionCard(
+                title = "🤲  My Duas",
                 emoji = "🤲",
                 items = duas,
                 onAdd = {
@@ -200,15 +165,12 @@ fun PromiseWallScreen(
                     showAddDialog = true
                 },
                 onDelete = onDeleteDua,
-                placeholder = "Ya Allah, help me...",
                 emptyText = "Add your personal duas"
             )
 
-            // ========================
-            // PERSONAL REMINDERS
-            // ========================
-            SectionCard(
-                title = "📝 Personal Reminders",
+            // Reminders
+            PromiseSectionCard(
+                title = "📝  Personal Reminders",
                 emoji = "📝",
                 items = reminders,
                 onAdd = {
@@ -217,11 +179,10 @@ fun PromiseWallScreen(
                     showAddDialog = true
                 },
                 onDelete = onDeleteReminder,
-                placeholder = "Remember that...",
                 emptyText = "Add things you want to remember during urges"
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
         }
     }
 
@@ -245,7 +206,8 @@ fun PromiseWallScreen(
             title = {
                 Text(
                     text = dialogTitle,
-                    fontWeight = FontWeight.Bold
+                    style = TaqwaType.sectionTitle,
+                    color = TextWhite
                 )
             },
             text = {
@@ -256,7 +218,7 @@ fun PromiseWallScreen(
                         .fillMaxWidth()
                         .height(120.dp),
                     placeholder = {
-                        Text(dialogPlaceholder, color = TextMuted)
+                        Text(dialogPlaceholder, style = TaqwaType.bodySmall, color = TextMuted)
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PrimaryLight,
@@ -265,7 +227,7 @@ fun PromiseWallScreen(
                         focusedTextColor = TextWhite,
                         unfocusedTextColor = TextWhite
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(TaqwaDimens.buttonSmallCornerRadius)
                 )
             },
             confirmButton = {
@@ -287,7 +249,7 @@ fun PromiseWallScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showAddDialog = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = TextLight)
                 }
             },
             containerColor = BackgroundCard
@@ -296,25 +258,16 @@ fun PromiseWallScreen(
 }
 
 @Composable
-private fun SectionCard(
+private fun PromiseSectionCard(
     title: String,
     emoji: String,
     items: List<String>,
     onAdd: () -> Unit,
     onDelete: (Int) -> Unit,
-    placeholder: String,
     emptyText: String
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
+    TaqwaCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -322,9 +275,8 @@ private fun SectionCard(
             ) {
                 Text(
                     text = title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentGold
+                    style = TaqwaType.sectionTitle,
+                    color = VanillaCustard
                 )
                 IconButton(
                     onClick = onAdd,
@@ -338,21 +290,21 @@ private fun SectionCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
             if (items.isEmpty()) {
                 Text(
                     text = emptyText,
-                    fontSize = 13.sp,
+                    style = TaqwaType.bodySmall,
                     color = TextMuted,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier.padding(vertical = TaqwaDimens.spaceS)
                 )
             } else {
                 items.forEachIndexed { index, item ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp),
+                            .padding(vertical = TaqwaDimens.spaceXS),
                         verticalAlignment = Alignment.Top,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -366,9 +318,8 @@ private fun SectionCard(
                             )
                             Text(
                                 text = "\"$item\"",
-                                fontSize = 14.sp,
-                                color = TextLight,
-                                lineHeight = 22.sp
+                                style = TaqwaType.body.copy(lineHeight = 22.sp),
+                                color = TextLight
                             )
                         }
                         IconButton(
@@ -386,8 +337,9 @@ private fun SectionCard(
 
                     if (index < items.size - 1) {
                         HorizontalDivider(
-                            color = BackgroundLight,
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            color = DividerColor,
+                            modifier = Modifier.padding(vertical = TaqwaDimens.spaceXS),
+                            thickness = TaqwaDimens.dividerThickness
                         )
                     }
                 }

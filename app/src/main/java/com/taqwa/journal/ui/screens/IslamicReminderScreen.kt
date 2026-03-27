@@ -14,13 +14,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.model.QuestionData
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.UrgeFlowProgressBar
 import com.taqwa.journal.ui.theme.*
 
 @Composable
 fun IslamicReminderScreen(
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    currentStep: Int = 3,
+    totalSteps: Int = 7
 ) {
-    // Pick a random reminder each time
     val reminder = remember {
         QuestionData.islamicReminders.random()
     }
@@ -29,113 +32,127 @@ fun IslamicReminderScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Top - Icon
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 40.dp)
-        ) {
-            Text(
-                text = "🤲",
-                fontSize = 56.sp
-            )
-        }
+        // Progress bar
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+        UrgeFlowProgressBar(
+            currentStep = currentStep,
+            totalSteps = totalSteps
+        )
 
-        // Middle - Ayah and reflection
+        // Content
         Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(vertical = 24.dp)
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Arabic text
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = BackgroundCard
-                ),
-                shape = RoundedCornerShape(16.dp)
+            // Top - Icon & Title
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = TaqwaDimens.spaceXXL)
+            ) {
+                Text(text = "🤲", fontSize = 48.sp)
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+                Text(
+                    text = "REMEMBER ALLAH",
+                    style = TaqwaType.screenTitle.copy(
+                        fontSize = 24.sp,
+                        letterSpacing = 3.sp
+                    ),
+                    color = VanillaCustard
+                )
+            }
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+            // Middle - Ayah Card
+            TaqwaCard(
+                containerColor = BackgroundCard
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Arabic
                     Text(
                         text = reminder.arabic,
-                        fontSize = 24.sp,
+                        style = TaqwaType.arabicLarge,
                         color = AccentGold,
                         textAlign = TextAlign.Center,
-                        lineHeight = 40.sp,
-                        fontWeight = FontWeight.Bold
+                        lineHeight = 40.sp
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
                     // Divider
-                    Divider(
-                        color = PrimaryMedium.copy(alpha = 0.3f),
-                        thickness = 1.dp,
-                        modifier = Modifier.padding(horizontal = 32.dp)
+                    HorizontalDivider(
+                        color = DividerColor,
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                        thickness = TaqwaDimens.dividerThickness
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
                     // Translation
                     Text(
                         text = "\"${reminder.translation}\"",
-                        fontSize = 16.sp,
+                        style = TaqwaType.body.copy(
+                            fontWeight = FontWeight.Medium,
+                            lineHeight = 24.sp
+                        ),
                         color = TextLight,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 24.sp,
-                        fontWeight = FontWeight.Medium
+                        textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
                     // Reference
                     Text(
                         text = "— ${reminder.reference}",
-                        fontSize = 13.sp,
+                        style = TaqwaType.bodySmall,
                         color = TextGray,
                         textAlign = TextAlign.Center
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-            // Reflection text
+            // Reflection
             Text(
                 text = reminder.reflection,
-                fontSize = 17.sp,
+                style = TaqwaType.body.copy(
+                    lineHeight = 28.sp,
+                    fontWeight = FontWeight.Light
+                ),
                 color = TextLight,
                 textAlign = TextAlign.Center,
-                lineHeight = 28.sp,
-                modifier = Modifier.padding(horizontal = 8.dp)
+                modifier = Modifier.padding(horizontal = TaqwaDimens.spaceS)
             )
-        }
 
-        // Bottom - Next button
-        Button(
-            onClick = onNext,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryMedium
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Text(
-                text = "Next ➜",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+            // Bottom - Next button
+            Button(
+                onClick = onNext,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(TaqwaDimens.buttonHeight)
+                    .padding(bottom = TaqwaDimens.spaceL),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryMedium
+                ),
+                shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+            ) {
+                Text(
+                    text = "Next  ➜",
+                    style = TaqwaType.button.copy(fontSize = 16.sp),
+                    color = TextWhite
+                )
+            }
         }
     }
 }

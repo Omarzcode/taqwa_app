@@ -1,5 +1,6 @@
 package com.taqwa.journal.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,11 +10,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.model.QuestionData
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.UrgeFlowProgressBar
 import com.taqwa.journal.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -21,171 +26,194 @@ import java.util.*
 @Composable
 fun VictoryScreen(
     urgesDefeated: Int,
-    onGoHome: () -> Unit
+    onGoHome: () -> Unit,
+    currentStep: Int = 7,
+    totalSteps: Int = 7
 ) {
     val victoryAyah = remember {
         QuestionData.victoryAyahs.random()
     }
 
     val currentTime = remember {
-        SimpleDateFormat("MMM dd, yyyy - hh:mm a", Locale.getDefault())
+        SimpleDateFormat("MMM dd, yyyy — hh:mm a", Locale.getDefault())
             .format(Date())
     }
+
+    // Trophy bounce animation
+    val infiniteTransition = rememberInfiniteTransition(label = "victory")
+    val trophyScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "trophy_scale"
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Top - Trophy
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 40.dp)
-        ) {
-            Text(
-                text = "🏆",
-                fontSize = 72.sp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "URGE DEFEATED",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = VictoryGreenLight
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "You just proved you're stronger\nthan your desires.",
-                fontSize = 16.sp,
-                color = TextLight,
-                textAlign = TextAlign.Center,
-                lineHeight = 24.sp
-            )
-        }
+        // Progress bar — completed!
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+        UrgeFlowProgressBar(
+            currentStep = currentStep,
+            totalSteps = totalSteps
+        )
 
-        // Middle - Ayah
-        Card(
+        // Content
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = VictoryGreen.copy(alpha = 0.15f)
-            ),
-            shape = RoundedCornerShape(16.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // Top - Trophy
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = TaqwaDimens.spaceXXL)
             ) {
                 Text(
-                    text = victoryAyah.arabic,
-                    fontSize = 20.sp,
-                    color = AccentGold,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 36.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "🏆",
+                    fontSize = 64.sp,
+                    modifier = Modifier.scale(trophyScale)
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
                 Text(
-                    text = "\"${victoryAyah.translation}\"",
-                    fontSize = 14.sp,
+                    text = "URGE DEFEATED",
+                    style = TaqwaType.screenTitle.copy(
+                        fontSize = 26.sp,
+                        letterSpacing = 3.sp
+                    ),
+                    color = VictoryGreenLight
+                )
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                Text(
+                    text = "You just proved you're stronger\nthan your desires.",
+                    style = TaqwaType.body,
                     color = TextLight,
                     textAlign = TextAlign.Center,
-                    lineHeight = 22.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "— ${victoryAyah.reference}",
-                    fontSize = 12.sp,
-                    color = TextGray
+                    lineHeight = 24.sp
                 )
             }
-        }
 
-        // Stats
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = BackgroundCard
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+            // Ayah Card
+            TaqwaAccentCard(
+                accentColor = VictoryGreen,
+                alpha = 0.15f
             ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = victoryAyah.arabic,
+                        style = TaqwaType.arabicMedium.copy(fontSize = 20.sp),
+                        color = AccentGold,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 36.sp
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                    Text(
+                        text = "\"${victoryAyah.translation}\"",
+                        style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
+                        color = TextLight,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                    Text(
+                        text = "— ${victoryAyah.reference}",
+                        style = TaqwaType.caption,
+                        color = TextGray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+
+            // Stats Card
+            TaqwaCard {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Total defeated
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "🔥",
-                            fontSize = 24.sp
-                        )
+                        Text(text = "🛡️", fontSize = 22.sp)
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
                         Text(
                             text = "$urgesDefeated",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AccentGold
+                            style = TaqwaType.screenTitle,
+                            color = VanillaCustard
                         )
                         Text(
                             text = "Total Defeated",
-                            fontSize = 12.sp,
+                            style = TaqwaType.captionSmall,
                             color = TextGray
                         )
                     }
+
+                    // Divider
+                    Box(
+                        modifier = Modifier
+                            .width(TaqwaDimens.dividerThickness)
+                            .height(60.dp)
+                            .background(DividerColor)
+                    )
+
+                    // Entry saved
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Text(text = "📝", fontSize = 22.sp)
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
                         Text(
-                            text = "📅",
-                            fontSize = 24.sp
+                            text = "Saved",
+                            style = TaqwaType.cardTitle,
+                            color = AccentGreen
                         )
                         Text(
                             text = currentTime,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextLight,
+                            style = TaqwaType.captionSmall,
+                            color = TextGray,
                             textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Entry Saved",
-                            fontSize = 12.sp,
-                            color = TextGray
                         )
                     }
                 }
             }
-        }
 
-        // Bottom - Home button
-        Button(
-            onClick = onGoHome,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryMedium
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Text(
-                text = "🏠  Back to Home",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+            // Bottom - Home button
+            Column(
+                modifier = Modifier.padding(bottom = TaqwaDimens.spaceXL)
+            ) {
+                Button(
+                    onClick = onGoHome,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryMedium
+                    ),
+                    shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+                ) {
+                    Text(
+                        text = "🏠  Back to Home",
+                        style = TaqwaType.button.copy(fontSize = 16.sp),
+                        color = TextWhite
+                    )
+                }
+            }
         }
     }
 }

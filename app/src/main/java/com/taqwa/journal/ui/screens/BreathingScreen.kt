@@ -1,5 +1,6 @@
 package com.taqwa.journal.ui.screens
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,25 +10,28 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taqwa.journal.ui.components.UrgeFlowProgressBar
 import com.taqwa.journal.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
 fun BreathingScreen(
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    currentStep: Int = 1,
+    totalSteps: Int = 7
 ) {
-    // Breath counter
     var breathCount by remember { mutableIntStateOf(0) }
     var breathPhase by remember { mutableStateOf("GET READY") }
     var isBreathingStarted by remember { mutableStateOf(false) }
     var isCompleted by remember { mutableStateOf(false) }
 
-    // Animation for the breathing circle
+    // Breathing circle animation
     val infiniteTransition = rememberInfiniteTransition(label = "breathing")
     val scale by infiniteTransition.animateFloat(
         initialValue = 0.6f,
@@ -37,6 +41,29 @@ fun BreathingScreen(
             repeatMode = RepeatMode.Reverse
         ),
         label = "scale"
+    )
+
+    // Phase-based color
+    val circleColor by animateColorAsState(
+        targetValue = when (breathPhase) {
+            "BREATHE IN..." -> AccentBlue.copy(alpha = 0.4f)
+            "HOLD..." -> VanillaCustard.copy(alpha = 0.3f)
+            "BREATHE OUT..." -> AccentGreen.copy(alpha = 0.4f)
+            "WELL DONE" -> AccentGreen.copy(alpha = 0.5f)
+            else -> PrimaryMedium.copy(alpha = 0.3f)
+        },
+        label = "circle_color"
+    )
+
+    val innerCircleColor by animateColorAsState(
+        targetValue = when (breathPhase) {
+            "BREATHE IN..." -> AccentBlue.copy(alpha = 0.6f)
+            "HOLD..." -> VanillaCustard.copy(alpha = 0.4f)
+            "BREATHE OUT..." -> AccentGreen.copy(alpha = 0.6f)
+            "WELL DONE" -> AccentGreen.copy(alpha = 0.7f)
+            else -> PrimaryMedium.copy(alpha = 0.5f)
+        },
+        label = "inner_circle_color"
     )
 
     // Breathing cycle logic
@@ -60,132 +87,165 @@ fun BreathingScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Top - Title
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 40.dp)
-        ) {
-            Text(
-                text = "⏸️",
-                fontSize = 48.sp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "STOP.",
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentRed
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "You are on autopilot right now.\nYour brain is lying to you.\nThis urge will pass.",
-                fontSize = 16.sp,
-                color = TextGray,
-                textAlign = TextAlign.Center,
-                lineHeight = 24.sp
-            )
-        }
+        // Progress bar
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+        UrgeFlowProgressBar(
+            currentStep = currentStep,
+            totalSteps = totalSteps
+        )
 
-        // Middle - Breathing Circle
+        // Content
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            if (isBreathingStarted) {
-                // Breathing circle with animation
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(200.dp)
-                        .scale(scale)
-                        .background(
-                            color = PrimaryMedium.copy(alpha = 0.3f),
-                            shape = CircleShape
-                        )
-                ) {
+            // Top - Title
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = TaqwaDimens.spaceXXL)
+            ) {
+                Text(
+                    text = "STOP.",
+                    style = TaqwaType.screenTitle.copy(
+                        fontSize = 32.sp,
+                        letterSpacing = 4.sp
+                    ),
+                    color = AccentRed
+                )
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+                Text(
+                    text = "You are on autopilot right now.\nYour brain is lying to you.\nThis urge will pass.",
+                    style = TaqwaType.body,
+                    color = TextGray,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 24.sp
+                )
+            }
+
+            // Middle - Breathing Circle
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (isBreathingStarted) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(140.dp)
-                            .background(
-                                color = PrimaryMedium.copy(alpha = 0.5f),
-                                shape = CircleShape
+                            .size(200.dp)
+                            .scale(scale)
+                            .clip(CircleShape)
+                            .background(circleColor)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(140.dp)
+                                .clip(CircleShape)
+                                .background(innerCircleColor)
+                        ) {
+                            Text(
+                                text = breathPhase,
+                                style = TaqwaType.button,
+                                color = TextWhite,
+                                textAlign = TextAlign.Center
                             )
-                    ) {
-                        Text(
-                            text = breathPhase,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextWhite,
-                            textAlign = TextAlign.Center
-                        )
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-                // Breath counter
-                Text(
-                    text = "Breath: $breathCount / 5",
-                    fontSize = 18.sp,
-                    color = TextLight,
-                    fontWeight = FontWeight.Medium
-                )
-            } else {
-                // Start button
-                Button(
-                    onClick = { isBreathingStarted = true },
-                    modifier = Modifier
-                        .size(200.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryMedium
-                    ),
-                    shape = CircleShape
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    // Progress dots
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceS)
                     ) {
-                        Text(
-                            text = "🫁",
-                            fontSize = 40.sp
+                        for (i in 1..5) {
+                            Box(
+                                modifier = Modifier
+                                    .size(if (i <= breathCount) 12.dp else 8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (i <= breathCount) AccentGreen
+                                        else BackgroundLight
+                                    )
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                    Text(
+                        text = "$breathCount / 5 breaths",
+                        style = TaqwaType.bodySmall,
+                        color = TextGray
+                    )
+                } else {
+                    // Start button
+                    Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .size(220.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.radialGradient(
+                                        colors = listOf(
+                                            PrimaryMedium.copy(alpha = 0.2f),
+                                            PrimaryMedium.copy(alpha = 0.0f)
+                                        )
+                                    )
+                                )
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "START\nBREATHING",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextWhite,
-                            textAlign = TextAlign.Center
-                        )
+                        Button(
+                            onClick = { isBreathingStarted = true },
+                            modifier = Modifier.size(180.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryMedium
+                            ),
+                            shape = CircleShape
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(text = "🫁", fontSize = 36.sp)
+                                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                                Text(
+                                    text = "START\nBREATHING",
+                                    style = TaqwaType.button,
+                                    color = TextWhite,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        // Bottom - Next button (only after completion)
-        if (isCompleted) {
-            Button(
-                onClick = onNext,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(bottom = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryMedium
-                ),
-                shape = RoundedCornerShape(16.dp)
+            // Bottom - Next button
+            Column(
+                modifier = Modifier.padding(bottom = TaqwaDimens.spaceXXL)
             ) {
-                Text(
-                    text = "I took my breaths ➜",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                if (isCompleted) {
+                    Button(
+                        onClick = onNext,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentGreen
+                        ),
+                        shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+                    ) {
+                        Text(
+                            text = "I took my breaths  ✓",
+                            style = TaqwaType.button.copy(fontSize = 16.sp),
+                            color = TextWhite
+                        )
+                    }
+                } else {
+                    // Invisible spacer same height as button
+                    Spacer(modifier = Modifier.height(56.dp))
+                }
             }
-        } else {
-            Spacer(modifier = Modifier.height(56.dp))
         }
     }
 }

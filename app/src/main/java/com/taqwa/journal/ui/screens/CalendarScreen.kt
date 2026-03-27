@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -22,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.database.JournalEntry
 import com.taqwa.journal.data.preferences.RelapseRecord
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 import java.time.LocalDate
 import java.time.YearMonth
@@ -30,7 +32,6 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
     entries: List<JournalEntry>,
@@ -41,7 +42,6 @@ fun CalendarScreen(
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val today = LocalDate.now()
 
-    // Convert entries to dates
     val entryDates = remember(entries) {
         entries.map { entry ->
             java.time.Instant.ofEpochMilli(entry.timestamp)
@@ -50,24 +50,16 @@ fun CalendarScreen(
         }.toSet()
     }
 
-    // Convert relapses to dates
     val relapseDates = remember(relapseHistory) {
         relapseHistory.mapNotNull { record ->
-            try {
-                LocalDate.parse(record.date)
-            } catch (e: Exception) {
-                null
-            }
+            try { LocalDate.parse(record.date) } catch (e: Exception) { null }
         }.toSet()
     }
 
-    // Streak start date - only valid if it exists
     val streakStart = remember(streakStartDate) {
         try {
             if (streakStartDate != null) LocalDate.parse(streakStartDate) else null
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 
     Column(
@@ -75,46 +67,26 @@ fun CalendarScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        TopAppBar(
-            title = {
-                Text(text = "📅  My Calendar", fontWeight = FontWeight.Bold)
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = BackgroundDark,
-                titleContentColor = TextWhite
-            )
+        TaqwaTopBar(
+            title = "📅  My Calendar",
+            onBack = onBack
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+            verticalArrangement = Arrangement.spacedBy(TaqwaDimens.cardSpacing)
         ) {
-            // Streak info card
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+
+            // Streak info
             if (streakStart != null) {
                 val streakDays = ChronoUnit.DAYS.between(streakStart, today).toInt()
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = PrimaryDark.copy(alpha = 0.3f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
+                TaqwaAccentCard(accentColor = PrimaryDark, alpha = 0.3f) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -122,11 +94,14 @@ fun CalendarScreen(
                             Text(text = "🔥", fontSize = 20.sp)
                             Text(
                                 text = "$streakDays days",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = TaqwaType.cardTitle,
                                 color = VanillaCustard
                             )
-                            Text(text = "Current Streak", fontSize = 10.sp, color = TextGray)
+                            Text(
+                                text = "Current Streak",
+                                style = TaqwaType.statLabel,
+                                color = TextGray
+                            )
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(text = "📅", fontSize = 20.sp)
@@ -134,26 +109,23 @@ fun CalendarScreen(
                                 text = streakStart.format(
                                     java.time.format.DateTimeFormatter.ofPattern("MMM dd")
                                 ),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
+                                style = TaqwaType.cardTitle,
                                 color = TextWhite
                             )
-                            Text(text = "Streak Started", fontSize = 10.sp, color = TextGray)
+                            Text(
+                                text = "Streak Started",
+                                style = TaqwaType.statLabel,
+                                color = TextGray
+                            )
                         }
                     }
                 }
             }
 
             // Legend
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            TaqwaCard {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     LegendItem(color = AccentGreen, label = "Clean Day")
@@ -162,18 +134,10 @@ fun CalendarScreen(
                 }
             }
 
-            // Month Navigation + Calendar
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    // Month header with arrows
+            // Calendar
+            TaqwaCard {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Month navigation
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -190,9 +154,13 @@ fun CalendarScreen(
                         }
 
                         Text(
-                            text = "${currentMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${currentMonth.year}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "${
+                                currentMonth.month.getDisplayName(
+                                    TextStyle.FULL,
+                                    Locale.getDefault()
+                                )
+                            } ${currentMonth.year}",
+                            style = TaqwaType.sectionTitle,
                             color = VanillaCustard
                         )
 
@@ -212,32 +180,32 @@ fun CalendarScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
-                    // Day of week headers
+                    // Day headers
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
+                        listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su").forEach { day ->
                             Text(
                                 text = day,
-                                fontSize = 12.sp,
-                                color = TextGray,
-                                fontWeight = FontWeight.Medium,
+                                style = TaqwaType.captionSmall.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = TextMuted,
                                 modifier = Modifier.weight(1f),
                                 textAlign = TextAlign.Center
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
                     // Calendar grid
                     val firstDayOfMonth = currentMonth.atDay(1)
                     val daysInMonth = currentMonth.lengthOfMonth()
                     val startDayOfWeek = firstDayOfMonth.dayOfWeek.value
-
                     val totalCells = (startDayOfWeek - 1) + daysInMonth
                     val rows = (totalCells + 6) / 7
 
@@ -262,23 +230,18 @@ fun CalendarScreen(
                                     val isFuture = date.isAfter(today)
                                     val isRelapse = relapseDates.contains(date)
                                     val hasEntry = entryDates.contains(date)
-
-                                    // Only mark as "in streak" if date is ON or AFTER streak start
-                                    // AND before today AND not a relapse day
                                     val isInStreak = streakStart != null &&
                                             !date.isBefore(streakStart) &&
                                             !date.isAfter(today) &&
                                             !isRelapse
-
-                                    // Before streak started = no color
                                     val isBeforeStreak = streakStart == null ||
                                             date.isBefore(streakStart)
 
                                     val bgColor = when {
                                         isFuture -> BackgroundCard
-                                        isRelapse -> AccentRed.copy(alpha = 0.3f)
-                                        hasEntry && isInStreak -> VanillaCustard.copy(alpha = 0.3f)
-                                        isInStreak -> AccentGreen.copy(alpha = 0.15f)
+                                        isRelapse -> AccentRed.copy(alpha = 0.25f)
+                                        hasEntry && isInStreak -> VanillaCustard.copy(alpha = 0.25f)
+                                        isInStreak -> AccentGreen.copy(alpha = 0.12f)
                                         isBeforeStreak -> BackgroundCard
                                         else -> BackgroundCard
                                     }
@@ -301,7 +264,7 @@ fun CalendarScreen(
                                             .background(bgColor)
                                             .then(
                                                 if (isToday) Modifier.border(
-                                                    width = 2.dp,
+                                                    width = 1.5.dp,
                                                     color = VanillaCustard,
                                                     shape = CircleShape
                                                 ) else Modifier
@@ -313,9 +276,10 @@ fun CalendarScreen(
                                         ) {
                                             Text(
                                                 text = "$dayIndex",
-                                                fontSize = 14.sp,
-                                                fontWeight = if (isToday) FontWeight.Bold
-                                                else FontWeight.Normal,
+                                                style = TaqwaType.bodySmall.copy(
+                                                    fontWeight = if (isToday) FontWeight.Bold
+                                                    else FontWeight.Normal
+                                                ),
                                                 color = textColor
                                             )
                                             if (!isFuture && !isBeforeStreak &&
@@ -349,7 +313,7 @@ fun CalendarScreen(
                 today = today
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
         }
     }
 }
@@ -358,15 +322,19 @@ fun CalendarScreen(
 private fun LegendItem(color: androidx.compose.ui.graphics.Color, label: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceXS)
     ) {
         Box(
             modifier = Modifier
-                .size(12.dp)
+                .size(10.dp)
                 .clip(CircleShape)
                 .background(color.copy(alpha = 0.5f))
         )
-        Text(text = label, fontSize = 11.sp, color = TextGray)
+        Text(
+            text = label,
+            style = TaqwaType.captionSmall,
+            color = TextGray
+        )
     }
 }
 
@@ -382,7 +350,6 @@ private fun MonthlyStatsCard(
     val monthEnd = if (currentMonth == YearMonth.now()) today
     else currentMonth.atEndOfMonth()
 
-    // Only count days from streak start or month start (whichever is later)
     val effectiveStart = if (streakStart != null && streakStart.isAfter(monthStart)) {
         streakStart
     } else {
@@ -408,53 +375,45 @@ private fun MonthlyStatsCard(
         }
     } else 0
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
+    TaqwaCard {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = "📊 Monthly Summary",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                style = TaqwaType.cardTitle,
                 color = VanillaCustard
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 MonthStat(value = "$cleanDays", label = "Clean Days", emoji = "🟢")
-                MonthStat(value = "$urgesThisMonth", label = "Urges Defeated", emoji = "🛡️")
+                MonthStat(value = "$urgesThisMonth", label = "Defeated", emoji = "🛡️")
                 MonthStat(value = "$relapsesThisMonth", label = "Relapses", emoji = "🔴")
             }
 
             if (daysInRange > 0) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                 val successRate = ((cleanDays.toFloat() / daysInRange) * 100).toInt()
                 LinearProgressIndicator(
                     progress = { cleanDays.toFloat() / daysInRange },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp)),
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
                     color = AccentGreen,
                     trackColor = BackgroundLight
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
                 Text(
                     text = "$successRate% Clean this month",
-                    fontSize = 12.sp,
-                    color = if (successRate >= 80) AccentGreen
-                    else if (successRate >= 50) AccentOrange
-                    else AccentRed,
-                    fontWeight = FontWeight.Medium,
+                    style = TaqwaType.caption.copy(fontWeight = FontWeight.Medium),
+                    color = when {
+                        successRate >= 80 -> AccentGreen
+                        successRate >= 50 -> AccentOrange
+                        else -> AccentRed
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -467,11 +426,16 @@ private fun MonthlyStatsCard(
 private fun MonthStat(value: String, label: String, emoji: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = emoji, fontSize = 18.sp)
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
         Text(
-            text = value, fontSize = 20.sp,
-            fontWeight = FontWeight.Bold, color = TextWhite
+            text = value,
+            style = TaqwaType.statValue.copy(fontSize = 20.sp),
+            color = TextWhite
         )
-        Text(text = label, fontSize = 10.sp, color = TextGray)
+        Text(
+            text = label,
+            style = TaqwaType.statLabel,
+            color = TextGray
+        )
     }
 }

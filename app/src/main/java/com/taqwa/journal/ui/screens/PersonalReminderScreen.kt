@@ -13,6 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.UrgeFlowProgressBar
 import com.taqwa.journal.ui.theme.*
 
 @Composable
@@ -21,204 +24,179 @@ fun PersonalReminderScreen(
     promises: List<String>,
     duas: List<String>,
     reminders: List<String>,
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    currentStep: Int = 4,
+    totalSteps: Int = 7
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Top
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 32.dp)
-        ) {
-            Text(
-                text = "📝",
-                fontSize = 48.sp
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "YOUR OWN WORDS",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentGold
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "You wrote these when you were thinking clearly",
-                fontSize = 14.sp,
-                color = TextGray,
-                textAlign = TextAlign.Center
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
+        // Progress bar
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+        UrgeFlowProgressBar(
+            currentStep = currentStep,
+            totalSteps = totalSteps
+        )
 
         // Content
         Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Top
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+            Text(text = "📝", fontSize = 40.sp)
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+            Text(
+                text = "YOUR OWN WORDS",
+                style = TaqwaType.screenTitle.copy(
+                    fontSize = 22.sp,
+                    letterSpacing = 3.sp
+                ),
+                color = VanillaCustard
+            )
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+            Text(
+                text = "You wrote these when you were thinking clearly",
+                style = TaqwaType.bodySmall,
+                color = TextGray,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
             // Why quitting
             if (whyQuitting.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = AccentGold.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
+                TaqwaAccentCard(
+                    accentColor = VanillaCustard,
+                    alpha = 0.08f
                 ) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "🎯 Why You're Doing This",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = AccentGold
+                            text = "🎯  Why You're Doing This",
+                            style = TaqwaType.cardTitle,
+                            color = VanillaCustard
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                         Text(
                             text = "\"$whyQuitting\"",
-                            fontSize = 16.sp,
+                            style = TaqwaType.body.copy(
+                                fontWeight = FontWeight.Medium,
+                                lineHeight = 26.sp
+                            ),
                             color = TextWhite,
-                            textAlign = TextAlign.Center,
-                            lineHeight = 26.sp,
-                            fontWeight = FontWeight.Medium
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(TaqwaDimens.cardSpacing))
             }
 
             // Promises
             if (promises.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = BackgroundCard
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
+                TaqwaCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "💪 Your Promises",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "💪  Your Promises",
+                            style = TaqwaType.cardTitle,
                             color = PrimaryLight
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                         promises.forEach { promise ->
-                            Text(
-                                text = "• \"$promise\"",
-                                fontSize = 15.sp,
-                                color = TextLight,
-                                lineHeight = 24.sp,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
+                            ReminderItem(text = promise)
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(TaqwaDimens.cardSpacing))
             }
 
             // Duas
             if (duas.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = BackgroundCard
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
+                TaqwaCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "🤲 Your Duas",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "🤲  Your Duas",
+                            style = TaqwaType.cardTitle,
                             color = PrimaryLight
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                         duas.forEach { dua ->
-                            Text(
-                                text = "• \"$dua\"",
-                                fontSize = 15.sp,
-                                color = TextLight,
-                                lineHeight = 24.sp,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
+                            ReminderItem(text = dua)
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(TaqwaDimens.cardSpacing))
             }
 
             // Reminders
             if (reminders.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = BackgroundCard
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
+                TaqwaCard {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "📝 Your Reminders",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "📝  Your Reminders",
+                            style = TaqwaType.cardTitle,
                             color = PrimaryLight
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                         reminders.forEach { reminder ->
-                            Text(
-                                text = "• \"$reminder\"",
-                                fontSize = 15.sp,
-                                color = TextLight,
-                                lineHeight = 24.sp,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
+                            ReminderItem(text = reminder)
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-        // Bottom - Next button
-        Button(
-            onClick = onNext,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .padding(bottom = 16.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryMedium
-            ),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Text(
-                text = "Next ➜",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Bottom - Next button
+            Button(
+                onClick = onNext,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(TaqwaDimens.buttonHeight)
+                    .padding(bottom = TaqwaDimens.spaceL),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryMedium
+                ),
+                shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+            ) {
+                Text(
+                    text = "Next  ➜",
+                    style = TaqwaType.button.copy(fontSize = 16.sp),
+                    color = TextWhite
+                )
+            }
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
         }
+    }
+}
+
+@Composable
+private fun ReminderItem(text: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = TaqwaDimens.spaceXS),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = "•",
+            style = TaqwaType.body,
+            color = TextGray,
+            modifier = Modifier.padding(end = TaqwaDimens.spaceS, top = 1.dp)
+        )
+        Text(
+            text = "\"$text\"",
+            style = TaqwaType.body.copy(lineHeight = 24.sp),
+            color = TextLight
+        )
     }
 }

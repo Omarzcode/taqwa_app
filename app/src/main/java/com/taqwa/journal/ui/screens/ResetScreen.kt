@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,9 +13,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResetScreen(
     currentStreak: Int,
@@ -32,127 +32,88 @@ fun ResetScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        // Top Bar
-        TopAppBar(
-            title = {
-                Text(
-                    text = "Reset Streak",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = BackgroundDark,
-                titleContentColor = TextWhite
-            )
+        TaqwaTopBar(
+            title = "Reset Streak",
+            onBack = onBack
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceXL)
         ) {
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+
             // Compassionate message
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = BackgroundCard
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            TaqwaCard {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "🤲",
-                        fontSize = 48.sp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = "🤲", fontSize = 44.sp)
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
                     Text(
                         text = "It's okay. Everyone falls.",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = TaqwaType.sectionTitle,
                         color = TextWhite,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                     Text(
                         text = "What matters is you're here again.\nYou didn't give up. That takes courage.",
-                        fontSize = 15.sp,
+                        style = TaqwaType.body.copy(lineHeight = 24.sp),
                         color = TextLight,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 24.sp
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // Ayah
-                    Divider(
-                        color = PrimaryMedium.copy(alpha = 0.3f),
-                        modifier = Modifier.padding(horizontal = 32.dp)
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                    HorizontalDivider(
+                        color = DividerColor,
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                        thickness = TaqwaDimens.dividerThickness
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
                     Text(
                         text = "إِنَّ اللَّهَ يُحِبُّ التَّوَّابِينَ",
-                        fontSize = 22.sp,
-                        color = AccentGold,
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold
+                        style = TaqwaType.arabicLarge,
+                        color = VanillaCustard,
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                     Text(
                         text = "\"Indeed, Allah loves those\nwho repent repeatedly.\"",
-                        fontSize = 14.sp,
+                        style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
                         color = TextLight,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 22.sp
+                        textAlign = TextAlign.Center
                     )
                     Text(
                         text = "— Al-Baqarah 2:222",
-                        fontSize = 12.sp,
+                        style = TaqwaType.captionSmall,
                         color = TextGray
                     )
                 }
             }
 
-            // Current streak info
+            // Streak info
             if (currentStreak > 0) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = AccentOrange.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
+                TaqwaAccentCard(accentColor = AccentOrange, alpha = 0.1f) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "You had a streak of $currentStreak days",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
+                            style = TaqwaType.cardTitle,
                             color = AccentOrange
                         )
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
                         Text(
                             text = "That progress is NOT lost. Your brain healed during those days.",
-                            fontSize = 13.sp,
+                            style = TaqwaType.bodySmall,
                             color = TextGray,
                             textAlign = TextAlign.Center,
                             lineHeight = 20.sp
@@ -161,11 +122,10 @@ fun ResetScreen(
                 }
             }
 
-            // Reflection question
+            // Reflection
             Text(
                 text = "What went wrong? What can you learn?",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                style = TaqwaType.sectionTitle,
                 color = TextWhite,
                 textAlign = TextAlign.Center
             )
@@ -179,6 +139,7 @@ fun ResetScreen(
                 placeholder = {
                     Text(
                         "Be honest with yourself...\n\nWhat triggered it?\nWhat could you do differently next time?",
+                        style = TaqwaType.bodySmall,
                         color = TextMuted
                     )
                 },
@@ -189,7 +150,7 @@ fun ResetScreen(
                     focusedTextColor = TextWhite,
                     unfocusedTextColor = TextWhite
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(TaqwaDimens.buttonSmallCornerRadius)
             )
 
             // Reset button
@@ -201,40 +162,44 @@ fun ResetScreen(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = AccentOrange
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
             ) {
                 Text(
-                    text = "Reset & Start Fresh 🔄",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
+                    text = "Reset & Start Fresh  🔄",
+                    style = TaqwaType.button.copy(fontSize = 16.sp),
                     color = TextWhite
                 )
             }
 
-            // Encouragement
+            // Hadith
             Text(
                 text = "\"A believer is not stung from\nthe same hole twice.\"\n— Prophet Muhammad ﷺ (Bukhari)",
-                fontSize = 13.sp,
-                color = TextGray,
+                style = TaqwaType.bodySmall,
+                color = TextMuted,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
         }
     }
 
-    // Confirmation dialog
+    // Confirm dialog
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
             title = {
                 Text(
                     text = "Reset Streak?",
-                    fontWeight = FontWeight.Bold
+                    style = TaqwaType.sectionTitle,
+                    color = TextWhite
                 )
             },
             text = {
                 Text(
-                    "Your streak will reset to Day 0.\nThis is a fresh start, not a failure."
+                    "Your streak will reset to Day 0.\nThis is a fresh start, not a failure.",
+                    style = TaqwaType.body,
+                    color = TextGray
                 )
             },
             confirmButton = {
@@ -249,7 +214,7 @@ fun ResetScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = TextLight)
                 }
             },
             containerColor = BackgroundCard

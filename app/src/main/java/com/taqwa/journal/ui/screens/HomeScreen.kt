@@ -1,6 +1,8 @@
 package com.taqwa.journal.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -11,11 +13,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.preferences.DailyAyah
+import com.taqwa.journal.ui.components.*
 import com.taqwa.journal.ui.theme.*
 
 @Composable
@@ -29,14 +35,15 @@ fun HomeScreen(
     dailyAyah: DailyAyah?,
     onDismissMilestone: () -> Unit,
     onUrgeClick: () -> Unit,
-    onPastEntriesClick: () -> Unit,
     onResetStreakClick: () -> Unit,
-    onRelapseHistoryClick: () -> Unit,
-    onPatternAnalysisClick: () -> Unit,
-    onPromiseWallClick: () -> Unit,
-    onCalendarClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onPastEntriesClick: () -> Unit = {},
+    onRelapseHistoryClick: () -> Unit = {},
+    onPatternAnalysisClick: () -> Unit = {},
+    onPromiseWallClick: () -> Unit = {},
+    onCalendarClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
 ) {
+    // Milestone dialog
     if (milestoneMessage != null) {
         AlertDialog(
             onDismissRequest = onDismissMilestone,
@@ -50,9 +57,11 @@ fun HomeScreen(
             },
             text = {
                 Text(
-                    text = milestoneMessage, fontSize = 16.sp,
+                    text = milestoneMessage,
+                    style = TaqwaType.body.copy(fontSize = 16.sp),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(), lineHeight = 24.sp
+                    modifier = Modifier.fillMaxWidth(),
+                    lineHeight = 24.sp
                 )
             },
             confirmButton = {
@@ -64,211 +73,282 @@ fun HomeScreen(
         )
     }
 
+    // Subtle breathing animation for urge button
+    val infiniteTransition = rememberInfiniteTransition(label = "breathe")
+    val breatheScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breathe_scale"
+    )
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = EaseInOutCubic),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glow_alpha"
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Section
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 16.dp)
-        ) {
-            Text(text = "﷽", fontSize = 32.sp, color = TextWhite, textAlign = TextAlign.Center)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Taqwa", fontSize = 28.sp,
-                fontWeight = FontWeight.Bold, color = VanillaCustard
-            )
-        }
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // ── Header ──
+        Text(
+            text = "Taqwa",
+            style = TaqwaType.screenTitle.copy(
+                fontSize = 22.sp,
+                letterSpacing = 2.sp
+            ),
+            color = VanillaCustard
+        )
 
-        // Daily Ayah Card
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXL))
+
+        // ── Daily Ayah (TOP — Spiritual Grounding) ──
         if (dailyAyah != null) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = PrimaryDark.copy(alpha = 0.3f)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "📖 Ayah of the Day", fontSize = 12.sp, color = TextGray)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = dailyAyah.arabic, fontSize = 18.sp, color = VanillaCustard,
-                        textAlign = TextAlign.Center, lineHeight = 30.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "\"${dailyAyah.translation}\"", fontSize = 13.sp,
-                        color = TextLight, textAlign = TextAlign.Center, lineHeight = 20.sp
-                    )
-                    Text(
-                        text = "— ${dailyAyah.reference}",
-                        fontSize = 11.sp, color = TextGray
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Streak Section
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-            shape = RoundedCornerShape(16.dp)
-        ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "🔥 Current Streak", fontSize = 14.sp, color = TextGray)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        text = "$currentStreak", fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (currentStreak > 0) VanillaCustard else TextGray
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (currentStreak == 1) "day" else "days",
-                        fontSize = 16.sp, color = TextGray,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-                Text(text = streakStatus, fontSize = 13.sp, color = PrimaryLight)
-
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(
-                    color = BackgroundLight,
-                    modifier = Modifier.padding(horizontal = 32.dp)
+                Text(
+                    text = dailyAyah.arabic,
+                    style = TaqwaType.arabicMedium.copy(fontSize = 20.sp),
+                    color = VanillaCustard,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 34.sp
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+                Text(
+                    text = "\"${dailyAyah.translation}\"",
+                    style = TaqwaType.bodySmall.copy(
+                        fontWeight = FontWeight.Light,
+                        lineHeight = 22.sp
+                    ),
+                    color = TextLight,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+                Text(
+                    text = dailyAyah.reference,
+                    style = TaqwaType.captionSmall,
+                    color = TextMuted
+                )
+            }
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+            // Subtle divider
+            Box(
+                modifier = Modifier
+                    .width(40.dp)
+                    .height(2.dp)
+                    .clip(RoundedCornerShape(1.dp))
+                    .background(PrimaryDark)
+            )
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+        }
+
+        // ── Streak Display ──
+        TaqwaCard {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Streak emoji based on progress
+                val streakEmoji = when {
+                    currentStreak >= 100 -> "💎"
+                    currentStreak >= 30 -> "🏆"
+                    currentStreak >= 7 -> "🔥"
+                    currentStreak >= 1 -> "🌱"
+                    else -> "🤲"
+                }
+
+                Text(text = streakEmoji, fontSize = 32.sp)
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+
+                Text(
+                    text = "$currentStreak",
+                    style = TaqwaType.streakNumber.copy(fontSize = 60.sp),
+                    color = if (currentStreak > 0) VanillaCustard else TextGray
+                )
+                Text(
+                    text = when (currentStreak) {
+                        0 -> "Start your journey"
+                        1 -> "day strong"
+                        else -> "days strong"
+                    },
+                    style = TaqwaType.body,
+                    color = TextGray
+                )
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+                Text(
+                    text = streakStatus,
+                    style = TaqwaType.bodySmall,
+                    color = PrimaryLight,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                HorizontalDivider(
+                    color = DividerColor,
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    thickness = TaqwaDimens.dividerThickness
+                )
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItem("Defeated", "$urgesDefeated", "🛡️")
-                    StatItem("Best", "$longestStreak days", "👑")
-                    StatItem("Relapses", "$totalRelapses", "📉")
+                    MiniStat(emoji = "🛡️", value = "$urgesDefeated", label = "Defeated")
+                    MiniStat(emoji = "👑", value = "$longestStreak", label = "Best Streak")
+                    MiniStat(emoji = "📉", value = "$totalRelapses", label = "Relapses")
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
 
-        // Big Urge Button
-        Button(
-            onClick = onUrgeClick,
-            modifier = Modifier.size(170.dp).clip(CircleShape),
-            colors = ButtonDefaults.buttonColors(containerColor = UrgeButtonRed),
-            shape = CircleShape,
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+        // ── Urge Button — Modern Pill Design ──
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "🔴", fontSize = 26.sp)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "I'M HAVING\nAN URGE", fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold, color = TextWhite,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Bottom buttons
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedButton(
-                onClick = onPastEntriesClick,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryLight),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("📖  My Past Entries", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            }
-
-            OutlinedButton(
-                onClick = onCalendarClick,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentGreen),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("📅  My Calendar", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            }
-
-            OutlinedButton(
-                onClick = onPatternAnalysisClick,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = VanillaCustard),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("📊  My Patterns", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            }
-
-            OutlinedButton(
-                onClick = onPromiseWallClick,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentBlue),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("📝  My Promise Wall", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            }
-
-            if (totalRelapses > 0) {
-                OutlinedButton(
-                    onClick = onRelapseHistoryClick,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentOrange),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Text(
-                        "📉  Relapse History ($totalRelapses)",
-                        fontSize = 14.sp, fontWeight = FontWeight.Medium
+            // Outer glow ring
+            Box(
+                modifier = Modifier
+                    .width(220.dp)
+                    .height(68.dp)
+                    .scale(breatheScale)
+                    .clip(RoundedCornerShape(34.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                UrgeButtonGlow.copy(alpha = glowAlpha),
+                                AccentOrange.copy(alpha = glowAlpha * 0.6f),
+                                UrgeButtonGlow.copy(alpha = glowAlpha)
+                            )
+                        )
                     )
+            )
+
+            // Main button
+            Button(
+                onClick = onUrgeClick,
+                modifier = Modifier
+                    .width(200.dp)
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(28.dp),
+                contentPadding = PaddingValues(0.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    UrgeButtonRed,
+                                    UrgeButtonRedDark
+                                )
+                            ),
+                            RoundedCornerShape(28.dp)
+                        )
+                        .border(
+                            width = 1.dp,
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(
+                                    UrgeButtonGlow.copy(alpha = 0.3f),
+                                    UrgeButtonGlow.copy(alpha = 0.1f)
+                                )
+                            ),
+                            shape = RoundedCornerShape(28.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Pulsing dot
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(AccentRed)
+                        )
+                        Spacer(modifier = Modifier.width(TaqwaDimens.spaceM))
+                        Text(
+                            text = "I need help",
+                            style = TaqwaType.button.copy(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 0.5.sp
+                            ),
+                            color = TextWhite
+                        )
+                    }
                 }
             }
-
-            OutlinedButton(
-                onClick = onSettingsClick,
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextGray),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("⚙️  Settings", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            }
-
-            TextButton(
-                onClick = onResetStreakClick,
-                modifier = Modifier.fillMaxWidth().height(40.dp)
-            ) {
-                Text("😔  I relapsed... Reset streak", fontSize = 12.sp, color = TextMuted)
-            }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+
+        // Subtitle under button
+        Text(
+            text = "Tap when you feel an urge",
+            style = TaqwaType.caption,
+            color = TextMuted
+        )
+
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
+
+        // ── Relapse (extremely subtle) ──
+        TextButton(
+            onClick = onResetStreakClick,
+            modifier = Modifier.height(TaqwaDimens.buttonSmallHeight)
+        ) {
+            Text(
+                text = "I relapsed...",
+                style = TaqwaType.captionSmall,
+                color = TextMuted.copy(alpha = 0.5f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
     }
 }
 
 @Composable
-private fun StatItem(label: String, value: String, emoji: String) {
+private fun MiniStat(emoji: String, value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = emoji, fontSize = 18.sp)
-        Spacer(modifier = Modifier.height(2.dp))
-        Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextWhite)
-        Text(text = label, fontSize = 10.sp, color = TextGray)
+        Text(text = emoji, fontSize = 16.sp)
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXS))
+        Text(
+            text = value,
+            style = TaqwaType.statValue,
+            color = TextWhite
+        )
+        Text(
+            text = label,
+            style = TaqwaType.statLabel,
+            color = TextGray
+        )
     }
 }

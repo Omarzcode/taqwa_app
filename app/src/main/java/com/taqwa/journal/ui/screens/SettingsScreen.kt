@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,9 +13,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.taqwa.journal.ui.components.TaqwaAccentCard
+import com.taqwa.journal.ui.components.TaqwaCard
+import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     totalEntries: Int,
@@ -25,94 +25,66 @@ fun SettingsScreen(
     currentStreak: Int,
     longestStreak: Int,
     onClearAllData: () -> Unit,
+    onRelapseHistoryClick: () -> Unit,
     onBack: () -> Unit
 ) {
     var showClearDataDialog by remember { mutableStateOf(false) }
-    var showAboutDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        TopAppBar(
-            title = {
-                Text(text = "⚙️  Settings", fontWeight = FontWeight.Bold)
-            },
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = TextWhite
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = BackgroundDark,
-                titleContentColor = TextWhite
-            )
+        TaqwaTopBar(
+            title = "⚙️  Settings",
+            onBack = onBack
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+            verticalArrangement = Arrangement.spacedBy(TaqwaDimens.cardSpacing)
         ) {
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+
             // App Info
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            TaqwaCard {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = "🕌", fontSize = 48.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "🕌", fontSize = 44.sp)
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                     Text(
                         text = "Taqwa",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = TaqwaType.screenTitle,
                         color = VanillaCustard
                     )
                     Text(
                         text = "Version 1.0.0",
-                        fontSize = 13.sp,
+                        style = TaqwaType.bodySmall,
                         color = TextGray
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                     Text(
                         text = "Your journey to purity",
-                        fontSize = 14.sp,
+                        style = TaqwaType.body,
                         color = TextLight
                     )
                 }
             }
 
-            // Statistics Overview
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
+            // Statistics
+            TaqwaCard {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "📊 App Statistics",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        text = "📊  App Statistics",
+                        style = TaqwaType.sectionTitle,
                         color = VanillaCustard
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
                     StatsRow(label = "Total Journal Entries", value = "$totalEntries")
                     StatsRow(label = "Current Streak", value = "$currentStreak days")
@@ -125,74 +97,62 @@ fun SettingsScreen(
                             "$rate%"
                         } else "N/A"
                     )
+
+                    // Relapse History button
+                    if (totalRelapses > 0) {
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                        HorizontalDivider(
+                            color = DividerColor,
+                            thickness = TaqwaDimens.dividerThickness
+                        )
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                        OutlinedButton(
+                            onClick = onRelapseHistoryClick,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(TaqwaDimens.buttonHeight),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = AccentOrange
+                            ),
+                            shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+                        ) {
+                            Text(
+                                text = "📉  View Relapse History ($totalRelapses)",
+                                style = TaqwaType.button,
+                                color = AccentOrange
+                            )
+                        }
+                    }
                 }
             }
 
-            // Privacy Info
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
+            // Privacy
+            TaqwaCard {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "🔒 Privacy",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        text = "🔒  Privacy",
+                        style = TaqwaType.sectionTitle,
                         color = VanillaCustard
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
-                    PrivacyItem(
-                        emoji = "📵",
-                        title = "100% Offline",
-                        description = "No internet connection needed or used"
-                    )
-                    PrivacyItem(
-                        emoji = "🚫",
-                        title = "Zero Permissions",
-                        description = "App requests nothing from your phone"
-                    )
-                    PrivacyItem(
-                        emoji = "💾",
-                        title = "Local Storage Only",
-                        description = "All data stays on your device"
-                    )
-                    PrivacyItem(
-                        emoji = "🔍",
-                        title = "No Analytics",
-                        description = "No tracking, no data collection"
-                    )
-                    PrivacyItem(
-                        emoji = "👤",
-                        title = "No Accounts",
-                        description = "No sign-up, no cloud sync"
-                    )
+                    PrivacyItem("📵", "100% Offline", "No internet connection needed or used")
+                    PrivacyItem("🚫", "Zero Permissions", "App requests nothing from your phone")
+                    PrivacyItem("💾", "Local Storage Only", "All data stays on your device")
+                    PrivacyItem("🔍", "No Analytics", "No tracking, no data collection")
+                    PrivacyItem("👤", "No Accounts", "No sign-up, no cloud sync")
                 }
             }
 
             // How It Works
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = BackgroundCard),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
-                ) {
+            TaqwaCard {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = "🧠 How Taqwa Works",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        text = "🧠  How Taqwa Works",
+                        style = TaqwaType.sectionTitle,
                         color = VanillaCustard
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                     Text(
                         text = "When an urge hits, your brain enters a 'tunnel vision' state:\n\n" +
                                 "🧠 Prefrontal Cortex (rational thinking) → GOES OFFLINE\n" +
@@ -202,9 +162,8 @@ fun SettingsScreen(
                                 "Phase 1: INTERRUPT — Stop the autopilot (breathing)\n" +
                                 "Phase 2: RECONNECT — Bring back rational thinking (reminders)\n" +
                                 "Phase 3: REFLECT — Deep self-understanding (journal)",
-                        fontSize = 13.sp,
-                        color = TextLight,
-                        lineHeight = 22.sp
+                        style = TaqwaType.bodySmall.copy(lineHeight = 22.sp),
+                        color = TextLight
                     )
                 }
             }
@@ -213,41 +172,40 @@ fun SettingsScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = AccentRed.copy(alpha = 0.1f)
+                    containerColor = AccentRed.copy(alpha = 0.08f)
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(TaqwaDimens.cardCornerRadius)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp)
+                        .padding(TaqwaDimens.cardPadding)
                 ) {
                     Text(
-                        text = "⚠️ Danger Zone",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
+                        text = "⚠️  Danger Zone",
+                        style = TaqwaType.sectionTitle,
                         color = AccentRed
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
                     Text(
                         text = "This will permanently delete ALL your data including journal entries, streak history, promises, and everything else. This cannot be undone.",
-                        fontSize = 13.sp,
-                        color = TextGray,
-                        lineHeight = 20.sp
+                        style = TaqwaType.bodySmall.copy(lineHeight = 20.sp),
+                        color = TextGray
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
                     Button(
                         onClick = { showClearDataDialog = true },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(TaqwaDimens.buttonHeight),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = AccentRed.copy(alpha = 0.3f)
+                            containerColor = AccentRed.copy(alpha = 0.2f)
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(TaqwaDimens.buttonSmallCornerRadius)
                     ) {
                         Text(
                             text = "🗑️  Delete All Data",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
+                            style = TaqwaType.button,
                             color = AccentRed
                         )
                     }
@@ -255,66 +213,56 @@ fun SettingsScreen(
             }
 
             // Credits
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = PrimaryDark.copy(alpha = 0.3f)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
+            TaqwaAccentCard(accentColor = PrimaryDark, alpha = 0.3f) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = "وَأَمَّا مَنْ خَافَ مَقَامَ رَبِّهِ وَنَهَى النَّفْسَ عَنِ الْهَوَىٰ\nفَإِنَّ الْجَنَّةَ هِيَ الْمَأْوَىٰ",
-                        fontSize = 16.sp,
+                        style = TaqwaType.arabicMedium.copy(lineHeight = 30.sp),
                         color = VanillaCustard,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 28.sp,
-                        fontWeight = FontWeight.Bold
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
                     Text(
                         text = "\"But as for he who feared standing before his Lord\nand restrained the soul from desire —\nthen indeed, Paradise will be his refuge.\"",
-                        fontSize = 12.sp,
+                        style = TaqwaType.caption.copy(lineHeight = 20.sp),
                         color = TextLight,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
+                        textAlign = TextAlign.Center
                     )
                     Text(
                         text = "— An-Nazi'at 79:40-41",
-                        fontSize = 11.sp,
+                        style = TaqwaType.captionSmall,
                         color = TextGray
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
                     Text(
                         text = "Made with ❤️ and Taqwa",
-                        fontSize = 13.sp,
+                        style = TaqwaType.bodySmall,
                         color = TextGray
                     )
                     Text(
                         text = "github.com/Omarzcode/taqwa_app",
-                        fontSize = 11.sp,
+                        style = TaqwaType.captionSmall,
                         color = PrimaryLight
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
         }
     }
 
-    // Clear data confirmation
+    // Clear data dialog
     if (showClearDataDialog) {
         AlertDialog(
             onDismissRequest = { showClearDataDialog = false },
             title = {
                 Text(
                     text = "⚠️ Delete ALL Data?",
-                    fontWeight = FontWeight.Bold
+                    style = TaqwaType.sectionTitle,
+                    color = TextWhite
                 )
             },
             text = {
@@ -325,7 +273,9 @@ fun SettingsScreen(
                             "• Relapse history\n" +
                             "• Promises, duas, reminders\n" +
                             "• All settings\n\n" +
-                            "This CANNOT be undone!"
+                            "This CANNOT be undone!",
+                    style = TaqwaType.body,
+                    color = TextGray
                 )
             },
             confirmButton = {
@@ -353,13 +303,18 @@ private fun StatsRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = TaqwaDimens.spaceXS),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = label, fontSize = 14.sp, color = TextGray)
         Text(
-            text = value, fontSize = 14.sp,
-            fontWeight = FontWeight.Bold, color = TextWhite
+            text = label,
+            style = TaqwaType.body,
+            color = TextGray
+        )
+        Text(
+            text = value,
+            style = TaqwaType.body.copy(fontWeight = FontWeight.Bold),
+            color = TextWhite
         )
     }
 }
@@ -369,18 +324,24 @@ private fun PrivacyItem(emoji: String, title: String, description: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = TaqwaDimens.spaceXS),
         verticalAlignment = Alignment.Top
     ) {
-        Text(text = emoji, fontSize = 16.sp, modifier = Modifier.padding(end = 8.dp))
+        Text(
+            text = emoji,
+            fontSize = 16.sp,
+            modifier = Modifier.padding(end = TaqwaDimens.spaceS)
+        )
         Column {
             Text(
-                text = title, fontSize = 14.sp,
-                fontWeight = FontWeight.Medium, color = TextWhite
+                text = title,
+                style = TaqwaType.body.copy(fontWeight = FontWeight.Medium),
+                color = TextWhite
             )
             Text(
-                text = description, fontSize = 12.sp,
-                color = TextGray, lineHeight = 18.sp
+                text = description,
+                style = TaqwaType.caption.copy(lineHeight = 18.sp),
+                color = TextGray
             )
         }
     }

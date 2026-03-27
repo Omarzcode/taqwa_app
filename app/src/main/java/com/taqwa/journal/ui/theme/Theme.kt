@@ -16,14 +16,21 @@ private val DarkColorScheme = darkColorScheme(
     onPrimaryContainer = TextLight,
     secondary = VanillaCustard,
     onSecondary = BackgroundDark,
+    secondaryContainer = ChipSelected,
+    onSecondaryContainer = VanillaLight,
+    tertiary = AccentBlue,
+    onTertiary = TextWhite,
     background = BackgroundDark,
     onBackground = TextWhite,
     surface = BackgroundCard,
     onSurface = TextWhite,
     surfaceVariant = BackgroundLight,
     onSurfaceVariant = TextLight,
+    surfaceTint = PrimaryLight,
     error = AccentRed,
-    onError = TextWhite
+    onError = TextWhite,
+    outline = DividerColor,
+    outlineVariant = ChipBorder
 )
 
 @Composable
@@ -37,13 +44,15 @@ fun TaqwaTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = BackgroundDark.toArgb()
-            window.navigationBarColor = BackgroundDark.toArgb()
+            window.navigationBarColor = NavBarBackground.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = Typography,
         content = content
     )
 }

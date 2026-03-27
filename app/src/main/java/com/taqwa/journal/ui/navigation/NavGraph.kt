@@ -8,7 +8,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
+import com.taqwa.journal.ui.components.BottomNavItem
 import com.taqwa.journal.ui.screens.*
 import com.taqwa.journal.ui.theme.AccentRed
 import com.taqwa.journal.ui.theme.BackgroundCard
@@ -34,6 +36,40 @@ object Routes {
     const val SETTINGS = "settings"
 
     fun entryDetail(entryId: Int) = "entry_detail/$entryId"
+
+    // Routes where bottom nav should be visible
+    val bottomNavRoutes = setOf(
+        HOME, PAST_ENTRIES, CALENDAR, PATTERN_ANALYSIS, SETTINGS
+    )
+
+    // Routes that are part of the urge flow (hide bottom nav)
+    val urgeFlowRoutes = setOf(
+        BREATHING, REALITY_CHECK, ISLAMIC_REMINDER,
+        PERSONAL_REMINDER, FUTURE_SELF, QUESTIONS, VICTORY
+    )
+}
+
+@Composable
+fun shouldShowBottomNav(navController: NavHostController): Boolean {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    return currentRoute in Routes.bottomNavRoutes
+}
+
+@Composable
+fun currentRoute(navController: NavHostController): String? {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    return navBackStackEntry?.destination?.route
+}
+
+fun NavHostController.navigateToBottomNavItem(item: BottomNavItem) {
+    navigate(item.route) {
+        popUpTo(Routes.HOME) {
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
 }
 
 @Composable
@@ -55,7 +91,9 @@ fun FlowBackHandler(navController: NavHostController) {
             dismissButton = {
                 TextButton(onClick = {
                     showQuitDialog = false
-                    navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } }
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.HOME) { inclusive = true }
+                    }
                 }) { Text("Quit Flow", color = AccentRed) }
             },
             containerColor = BackgroundCard
@@ -100,7 +138,10 @@ fun TaqwaNavGraph(navController: NavHostController, viewModel: JournalViewModel)
                 milestoneMessage = milestoneMessage, totalRelapses = totalRelapses,
                 dailyAyah = dailyAyah,
                 onDismissMilestone = { viewModel.dismissMilestone() },
-                onUrgeClick = { viewModel.resetCurrentEntry(); navController.navigate(Routes.BREATHING) },
+                onUrgeClick = {
+                    viewModel.resetCurrentEntry()
+                    navController.navigate(Routes.BREATHING)
+                },
                 onPastEntriesClick = { navController.navigate(Routes.PAST_ENTRIES) },
                 onResetStreakClick = { navController.navigate(Routes.RESET_STREAK) },
                 onRelapseHistoryClick = { navController.navigate(Routes.RELAPSE_HISTORY) },
@@ -111,55 +152,155 @@ fun TaqwaNavGraph(navController: NavHostController, viewModel: JournalViewModel)
             )
         }
 
-        composable(Routes.BREATHING) { FlowBackHandler(navController); BreathingScreen(onNext = { navController.navigate(Routes.REALITY_CHECK) }) }
-        composable(Routes.REALITY_CHECK) { FlowBackHandler(navController); RealityCheckScreen(onNext = { navController.navigate(Routes.ISLAMIC_REMINDER) }) }
-        composable(Routes.ISLAMIC_REMINDER) { FlowBackHandler(navController); IslamicReminderScreen(onNext = { if (hasPromiseContent) navController.navigate(Routes.PERSONAL_REMINDER) else navController.navigate(Routes.FUTURE_SELF) }) }
-        composable(Routes.PERSONAL_REMINDER) { FlowBackHandler(navController); PersonalReminderScreen(whyQuitting = whyQuitting, promises = promises, duas = duas, reminders = personalReminders, onNext = { navController.navigate(Routes.FUTURE_SELF) }) }
-        composable(Routes.FUTURE_SELF) { FlowBackHandler(navController); FutureSelfScreen(onNext = { navController.navigate(Routes.QUESTIONS) }) }
+        composable(Routes.BREATHING) {
+            FlowBackHandler(navController)
+            BreathingScreen(onNext = { navController.navigate(Routes.REALITY_CHECK) })
+        }
+
+        composable(Routes.REALITY_CHECK) {
+            FlowBackHandler(navController)
+            RealityCheckScreen(onNext = { navController.navigate(Routes.ISLAMIC_REMINDER) })
+        }
+
+        composable(Routes.ISLAMIC_REMINDER) {
+            FlowBackHandler(navController)
+            IslamicReminderScreen(
+                onNext = {
+                    if (hasPromiseContent) navController.navigate(Routes.PERSONAL_REMINDER)
+                    else navController.navigate(Routes.FUTURE_SELF)
+                }
+            )
+        }
+
+        composable(Routes.PERSONAL_REMINDER) {
+            FlowBackHandler(navController)
+            PersonalReminderScreen(
+                whyQuitting = whyQuitting, promises = promises,
+                duas = duas, reminders = personalReminders,
+                onNext = { navController.navigate(Routes.FUTURE_SELF) }
+            )
+        }
+
+        composable(Routes.FUTURE_SELF) {
+            FlowBackHandler(navController)
+            FutureSelfScreen(onNext = { navController.navigate(Routes.QUESTIONS) })
+        }
 
         composable(Routes.QUESTIONS) {
             FlowBackHandler(navController)
             QuestionsScreen(
-                situationContext = situationContext, onSituationContextChange = { viewModel.updateSituationContext(it) },
-                selectedFeelings = selectedFeelings, onFeelingToggle = { viewModel.toggleFeeling(it) },
-                selectedNeeds = selectedNeeds, onNeedToggle = { viewModel.toggleRealNeed(it) },
-                selectedAlternatives = selectedAlternatives, onAlternativeToggle = { viewModel.toggleAlternative(it) },
-                urgeStrength = urgeStrength, onUrgeStrengthChange = { viewModel.updateUrgeStrength(it) },
-                freeText = freeText, onFreeTextChange = { viewModel.updateFreeText(it) },
-                onFinish = { viewModel.saveEntry(); navController.navigate(Routes.VICTORY) { popUpTo(Routes.HOME) { inclusive = false } } }
+                situationContext = situationContext,
+                onSituationContextChange = { viewModel.updateSituationContext(it) },
+                selectedFeelings = selectedFeelings,
+                onFeelingToggle = { viewModel.toggleFeeling(it) },
+                selectedNeeds = selectedNeeds,
+                onNeedToggle = { viewModel.toggleRealNeed(it) },
+                selectedAlternatives = selectedAlternatives,
+                onAlternativeToggle = { viewModel.toggleAlternative(it) },
+                urgeStrength = urgeStrength,
+                onUrgeStrengthChange = { viewModel.updateUrgeStrength(it) },
+                freeText = freeText,
+                onFreeTextChange = { viewModel.updateFreeText(it) },
+                onFinish = {
+                    viewModel.saveEntry()
+                    navController.navigate(Routes.VICTORY) {
+                        popUpTo(Routes.HOME) { inclusive = false }
+                    }
+                }
             )
         }
 
         composable(Routes.VICTORY) {
-            BackHandler { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }
-            VictoryScreen(urgesDefeated = urgesDefeated, onGoHome = { navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } })
+            BackHandler {
+                navController.navigate(Routes.HOME) {
+                    popUpTo(Routes.HOME) { inclusive = true }
+                }
+            }
+            VictoryScreen(
+                urgesDefeated = urgesDefeated,
+                onGoHome = {
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.HOME) { inclusive = true }
+                    }
+                }
+            )
         }
 
-        composable(Routes.PAST_ENTRIES) { PastEntriesScreen(entries = allEntries, onEntryClick = { navController.navigate(Routes.entryDetail(it)) }, onDeleteEntry = { viewModel.deleteEntry(it) }, onBack = { navController.popBackStack() }) }
+        composable(Routes.PAST_ENTRIES) {
+            PastEntriesScreen(
+                entries = allEntries,
+                onEntryClick = { navController.navigate(Routes.entryDetail(it)) },
+                onDeleteEntry = { viewModel.deleteEntry(it) },
+                onBack = { navController.popBackStack() }
+            )
+        }
 
-        composable(route = Routes.ENTRY_DETAIL, arguments = listOf(navArgument("entryId") { type = NavType.IntType })) { backStackEntry ->
+        composable(
+            route = Routes.ENTRY_DETAIL,
+            arguments = listOf(navArgument("entryId") { type = NavType.IntType })
+        ) { backStackEntry ->
             val entryId = backStackEntry.arguments?.getInt("entryId") ?: 0
             val entry by viewModel.getEntryById(entryId).collectAsState(initial = null)
             EntryDetailScreen(entry = entry, onBack = { navController.popBackStack() })
         }
 
-        composable(Routes.RESET_STREAK) { ResetScreen(currentStreak = currentStreak, onReset = { reason -> viewModel.resetStreak(reason); navController.navigate(Routes.HOME) { popUpTo(Routes.HOME) { inclusive = true } } }, onBack = { navController.popBackStack() }) }
-        composable(Routes.RELAPSE_HISTORY) { RelapseHistoryScreen(relapseHistory = relapseHistory, totalRelapses = totalRelapses, onBack = { navController.popBackStack() }) }
-        composable(Routes.PATTERN_ANALYSIS) { PatternAnalysisScreen(entries = allEntries, onBack = { navController.popBackStack() }) }
+        composable(Routes.RESET_STREAK) {
+            ResetScreen(
+                currentStreak = currentStreak,
+                onReset = { reason ->
+                    viewModel.resetStreak(reason)
+                    navController.navigate(Routes.HOME) {
+                        popUpTo(Routes.HOME) { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.RELAPSE_HISTORY) {
+            RelapseHistoryScreen(
+                relapseHistory = relapseHistory,
+                totalRelapses = totalRelapses,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.PATTERN_ANALYSIS) {
+            PatternAnalysisScreen(
+                entries = allEntries,
+                onBack = { navController.popBackStack() }
+            )
+        }
 
         composable(Routes.PROMISE_WALL) {
             LaunchedEffect(Unit) { viewModel.refreshPromiseData() }
-            PromiseWallScreen(promises = promises, whyQuitting = whyQuitting, duas = duas, reminders = personalReminders,
-                onAddPromise = { viewModel.addPromise(it) }, onDeletePromise = { viewModel.deletePromise(it) },
-                onSetWhyQuitting = { viewModel.setWhyQuitting(it) }, onAddDua = { viewModel.addDua(it) },
-                onDeleteDua = { viewModel.deleteDua(it) }, onAddReminder = { viewModel.addReminder(it) },
-                onDeleteReminder = { viewModel.deleteReminder(it) }, onBack = { navController.popBackStack() })
+            PromiseWallScreen(
+                promises = promises, whyQuitting = whyQuitting,
+                duas = duas, reminders = personalReminders,
+                onAddPromise = { viewModel.addPromise(it) },
+                onDeletePromise = { viewModel.deletePromise(it) },
+                onSetWhyQuitting = { viewModel.setWhyQuitting(it) },
+                onAddDua = { viewModel.addDua(it) },
+                onDeleteDua = { viewModel.deleteDua(it) },
+                onAddReminder = { viewModel.addReminder(it) },
+                onDeleteReminder = { viewModel.deleteReminder(it) },
+                onBack = { navController.popBackStack() }
+            )
         }
 
         composable(Routes.CALENDAR) {
-            val streakStartDate = remember { viewModel.streakManager.getStreakStartDate()?.toString() }
-            CalendarScreen(entries = allEntries, relapseHistory = relapseHistory, streakStartDate = streakStartDate, onBack = { navController.popBackStack() })
+            val streakStartDate = remember {
+                viewModel.streakManager.getStreakStartDate()?.toString()
+            }
+            CalendarScreen(
+                entries = allEntries,
+                relapseHistory = relapseHistory,
+                streakStartDate = streakStartDate,
+                onBack = { navController.popBackStack() }
+            )
         }
+
+        // In NavGraph.kt — update the Settings composable:
 
         composable(Routes.SETTINGS) {
             SettingsScreen(
@@ -168,6 +309,7 @@ fun TaqwaNavGraph(navController: NavHostController, viewModel: JournalViewModel)
                 currentStreak = currentStreak,
                 longestStreak = longestStreak,
                 onClearAllData = { viewModel.clearAllData() },
+                onRelapseHistoryClick = { navController.navigate(Routes.RELAPSE_HISTORY) },
                 onBack = { navController.popBackStack() }
             )
         }

@@ -1,6 +1,7 @@
 package com.taqwa.journal.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,18 +14,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.model.QuestionData
+import com.taqwa.journal.ui.components.UrgeFlowProgressBar
 import com.taqwa.journal.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
 fun RealityCheckScreen(
-    onNext: () -> Unit
+    onNext: () -> Unit,
+    currentStep: Int = 2,
+    totalSteps: Int = 7
 ) {
     val lines = QuestionData.realityCheckLines
     var visibleCount by remember { mutableIntStateOf(0) }
     var allShown by remember { mutableStateOf(false) }
 
-    // Show lines one by one with delay
     LaunchedEffect(Unit) {
         for (i in lines.indices) {
             delay(3000)
@@ -38,88 +41,113 @@ fun RealityCheckScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // Top - Title
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 40.dp)
-        ) {
-            Text(
-                text = "❌",
-                fontSize = 48.sp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "REALITY CHECK",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = AccentRed
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Read each line slowly...",
-                fontSize = 16.sp,
-                color = TextGray
-            )
-        }
+        // Progress bar
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+        UrgeFlowProgressBar(
+            currentStep = currentStep,
+            totalSteps = totalSteps
+        )
 
-        // Middle - Lines appearing one by one
+        // Content
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .fillMaxSize()
+                .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            lines.forEachIndexed { index, line ->
-                AnimatedVisibility(
-                    visible = index < visibleCount,
-                    enter = fadeIn() + slideInVertically()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top
+            // Top - Title
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(top = TaqwaDimens.spaceXXL)
+            ) {
+                Text(
+                    text = "REALITY CHECK",
+                    style = TaqwaType.screenTitle.copy(
+                        fontSize = 26.sp,
+                        letterSpacing = 3.sp
+                    ),
+                    color = AccentRed
+                )
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                Text(
+                    text = "Read each line slowly...",
+                    style = TaqwaType.body,
+                    color = TextGray
+                )
+            }
+
+            // Middle - Lines appearing one by one
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(vertical = TaqwaDimens.spaceXL),
+                verticalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceL)
+            ) {
+                lines.forEachIndexed { index, line ->
+                    AnimatedVisibility(
+                        visible = index < visibleCount,
+                        enter = fadeIn(
+                            animationSpec = tween(600)
+                        ) + slideInVertically(
+                            animationSpec = tween(600),
+                            initialOffsetY = { it / 2 }
+                        )
                     ) {
-                        Text(
-                            text = "✦",
-                            fontSize = 16.sp,
-                            color = AccentOrange,
-                            modifier = Modifier.padding(end = 12.dp, top = 2.dp)
-                        )
-                        Text(
-                            text = line,
-                            fontSize = 16.sp,
-                            color = TextLight,
-                            lineHeight = 22.sp
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                text = "✦",
+                                fontSize = 14.sp,
+                                color = AccentOrange,
+                                modifier = Modifier.padding(
+                                    end = TaqwaDimens.spaceM,
+                                    top = 3.dp
+                                )
+                            )
+                            Text(
+                                text = line,
+                                style = TaqwaType.body.copy(
+                                    lineHeight = 22.sp
+                                ),
+                                color = TextLight
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        // Bottom - Next button
-        if (allShown) {
-            Button(
-                onClick = onNext,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(bottom = 16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryMedium
-                ),
-                shape = RoundedCornerShape(16.dp)
+            // Bottom - Next button
+            AnimatedVisibility(
+                visible = allShown,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it })
             ) {
-                Text(
-                    text = "Next ➜",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Button(
+                    onClick = onNext,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(TaqwaDimens.buttonHeight)
+                        .padding(bottom = TaqwaDimens.spaceL),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryMedium
+                    ),
+                    shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+                ) {
+                    Text(
+                        text = "I hear you  ➜",
+                        style = TaqwaType.button.copy(fontSize = 16.sp),
+                        color = TextWhite
+                    )
+                }
             }
-        } else {
-            Spacer(modifier = Modifier.height(56.dp))
+
+            if (!allShown) {
+                Spacer(modifier = Modifier.height(TaqwaDimens.buttonHeight))
+            }
         }
     }
 }
