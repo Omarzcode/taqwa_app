@@ -27,6 +27,7 @@ import java.util.*
 fun VictoryScreen(
     urgesDefeated: Int,
     onGoHome: () -> Unit,
+    onWriteVictoryNote: () -> Unit,
     currentStep: Int = 7,
     totalSteps: Int = 7
 ) {
@@ -144,10 +145,7 @@ fun VictoryScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Total defeated
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = "🛡️", fontSize = 22.sp)
                         Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
                         Text(
@@ -162,7 +160,6 @@ fun VictoryScreen(
                         )
                     }
 
-                    // Divider
                     Box(
                         modifier = Modifier
                             .width(TaqwaDimens.dividerThickness)
@@ -170,10 +167,7 @@ fun VictoryScreen(
                             .background(DividerColor)
                     )
 
-                    // Entry saved
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = "📝", fontSize = 22.sp)
                         Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
                         Text(
@@ -191,7 +185,44 @@ fun VictoryScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXL))
+
+            // ── NEW: Write Victory Note prompt ──
+            TaqwaAccentCard(accentColor = VictoryGreen, alpha = 0.08f) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "🧠 Save this feeling",
+                        style = TaqwaType.cardTitle,
+                        color = VictoryGreenLight
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                    Text(
+                        text = "Write a note to yourself for the next time\nan urge comes. Your own words are your\nstrongest weapon.",
+                        style = TaqwaType.bodySmall.copy(lineHeight = 20.sp),
+                        color = TextGray,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                    OutlinedButton(
+                        onClick = onWriteVictoryNote,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = VictoryGreenLight
+                        ),
+                        shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+                    ) {
+                        Text(
+                            "✍️  Write Victory Note",
+                            style = TaqwaType.button,
+                            color = VictoryGreenLight
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXL))
 
             // Bottom - Home button
             Column(

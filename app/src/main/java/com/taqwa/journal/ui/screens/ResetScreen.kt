@@ -21,11 +21,14 @@ import com.taqwa.journal.ui.theme.*
 @Composable
 fun ResetScreen(
     currentStreak: Int,
-    onReset: (String) -> Unit,
+    onReset: (reason: String) -> Unit,
+    onResetWithLetter: (reason: String, letter: String) -> Unit,
     onBack: () -> Unit
 ) {
     var reason by remember { mutableStateOf("") }
+    var letterToSelf by remember { mutableStateOf("") }
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var showLetterSection by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -122,7 +125,7 @@ fun ResetScreen(
                 }
             }
 
-            // Reflection
+            // Reflection — What went wrong
             Text(
                 text = "What went wrong? What can you learn?",
                 style = TaqwaType.sectionTitle,
@@ -135,10 +138,10 @@ fun ResetScreen(
                 onValueChange = { reason = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(160.dp),
+                    .height(120.dp),
                 placeholder = {
                     Text(
-                        "Be honest with yourself...\n\nWhat triggered it?\nWhat could you do differently next time?",
+                        "Be honest with yourself...\n\nWhat triggered it?",
                         style = TaqwaType.bodySmall,
                         color = TextMuted
                     )
@@ -152,6 +155,90 @@ fun ResetScreen(
                 ),
                 shape = RoundedCornerShape(TaqwaDimens.buttonSmallCornerRadius)
             )
+
+            // ── NEW: Letter to Future Self ──
+            if (!showLetterSection) {
+                TaqwaAccentCard(accentColor = AccentRed, alpha = 0.08f) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "📝 Your strongest weapon",
+                            style = TaqwaType.cardTitle,
+                            color = AccentRedLight
+                        )
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                        Text(
+                            text = "Right now you feel the pain and regret.\nNext time, you'll forget.\n\nWrite a message that will stop your future self.",
+                            style = TaqwaType.bodySmall.copy(lineHeight = 20.sp),
+                            color = TextGray,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                        OutlinedButton(
+                            onClick = { showLetterSection = true },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = AccentRedLight
+                            ),
+                            shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius)
+                        ) {
+                            Text(
+                                "✍️  Write to Future Self",
+                                style = TaqwaType.button,
+                                color = AccentRedLight
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Letter input section
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(text = "📝", fontSize = 18.sp)
+                        Spacer(modifier = Modifier.width(TaqwaDimens.spaceS))
+                        Text(
+                            text = "Letter to your future self",
+                            style = TaqwaType.cardTitle,
+                            color = AccentRedLight
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+                    Text(
+                        text = "This will appear the next time you're about to relapse.",
+                        style = TaqwaType.captionSmall,
+                        color = TextMuted
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+
+                    OutlinedTextField(
+                        value = letterToSelf,
+                        onValueChange = { letterToSelf = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 140.dp, max = 250.dp),
+                        placeholder = {
+                            Text(
+                                "How do you feel right now?\n\nWhat would you say to stop yourself next time?\n\n\"Remember this feeling. It wasn't worth it...\"",
+                                style = TaqwaType.bodySmall,
+                                color = TextMuted,
+                                lineHeight = 20.sp
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentRed,
+                            unfocusedBorderColor = BackgroundLight,
+                            cursorColor = AccentRed,
+                            focusedTextColor = TextWhite,
+                            unfocusedTextColor = TextWhite
+                        ),
+                        shape = RoundedCornerShape(TaqwaDimens.buttonSmallCornerRadius)
+                    )
+                }
+            }
 
             // Reset button
             Button(
@@ -205,7 +292,11 @@ fun ResetScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onReset(reason)
+                        if (letterToSelf.isNotBlank()) {
+                            onResetWithLetter(reason, letterToSelf)
+                        } else {
+                            onReset(reason)
+                        }
                         showConfirmDialog = false
                     }
                 ) {

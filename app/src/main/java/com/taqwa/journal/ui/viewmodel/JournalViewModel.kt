@@ -1,22 +1,35 @@
 package com.taqwa.journal.ui.viewmodel
 
 import android.app.Application
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.taqwa.journal.data.database.CheckInEntry
 import com.taqwa.journal.data.database.JournalDatabase
 import com.taqwa.journal.data.database.JournalEntry
+import com.taqwa.journal.data.database.MemoryEntry
+import com.taqwa.journal.data.export.ExportManager
+import com.taqwa.journal.data.export.ExportOptions
+import com.taqwa.journal.data.export.ReportData
 import com.taqwa.journal.data.preferences.DailyAyah
 import com.taqwa.journal.data.preferences.DailyQuranManager
+import com.taqwa.journal.data.preferences.NotificationPreferences
 import com.taqwa.journal.data.preferences.OnboardingManager
 import com.taqwa.journal.data.preferences.PromiseManager
 import com.taqwa.journal.data.preferences.RelapseRecord
+import com.taqwa.journal.data.preferences.ShieldPlan
+import com.taqwa.journal.data.preferences.ShieldPlanManager
 import com.taqwa.journal.data.preferences.StreakManager
 import com.taqwa.journal.data.repository.JournalRepository
+import com.taqwa.journal.notification.NotificationScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 class JournalViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -25,9 +38,16 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     val promiseManager: PromiseManager
     private val dailyQuranManager: DailyQuranManager
     private val onboardingManager: OnboardingManager
+    val exportManager: ExportManager
+    val notificationPreferences: NotificationPreferences
+    private val notificationScheduler: NotificationScheduler
 
     val allEntries: Flow<List<JournalEntry>>
     val urgesDefeatedCount: Flow<Int>
+
+    // ══════════════════════════════════════════
+    // EXISTING STATE
+    // ══════════════════════════════════════════
 
     private val _isOnboardingCompleted = MutableStateFlow(true)
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted.asStateFlow()
@@ -68,6 +88,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val _dailyAyah = MutableStateFlow<DailyAyah?>(null)
     val dailyAyah: StateFlow<DailyAyah?> = _dailyAyah.asStateFlow()
 
+    // Current entry being built during intervention flow
     private val _currentSituationContext = MutableStateFlow("")
     val currentSituationContext: StateFlow<String> = _currentSituationContext.asStateFlow()
 
@@ -86,6 +107,96 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val _currentFreeText = MutableStateFlow("")
     val currentFreeText: StateFlow<String> = _currentFreeText.asStateFlow()
 
+    // ══════════════════════════════════════════
+    // MEMORY BANK STATE - بنك الذاكرة
+    // ══════════════════════════════════════════
+
+    val allMemories: Flow<List<MemoryEntry>> = MutableStateFlow<List<MemoryEntry>>(emptyList())
+    val memoryCount: Flow<Int> = MutableStateFlow(0)
+
+    private val _quickCatchRelapseLetter = MutableStateFlow<MemoryEntry?>(null)
+    val quickCatchRelapseLetter: StateFlow<MemoryEntry?> = _quickCatchRelapseLetter.asStateFlow()
+
+    private val _quickCatchVictoryNote = MutableStateFlow<MemoryEntry?>(null)
+    val quickCatchVictoryNote: StateFlow<MemoryEntry?> = _quickCatchVictoryNote.asStateFlow()
+
+    private val _quickCatchRandomMemory = MutableStateFlow<MemoryEntry?>(null)
+    val quickCatchRandomMemory: StateFlow<MemoryEntry?> = _quickCatchRandomMemory.asStateFlow()
+
+    private val _interventionMemory = MutableStateFlow<MemoryEntry?>(null)
+    val interventionMemory: StateFlow<MemoryEntry?> = _interventionMemory.asStateFlow()
+
+    private val _quickCatchCount = MutableStateFlow(0)
+    val quickCatchCount: StateFlow<Int> = _quickCatchCount.asStateFlow()
+
+    // ══════════════════════════════════════════
+    // MORNING CHECK-IN STATE - الورد الصباحي
+    // ══════════════════════════════════════════
+
+    private val _todayCheckInDone = MutableStateFlow(false)
+    val todayCheckInDone: StateFlow<Boolean> = _todayCheckInDone.asStateFlow()
+
+    private val _checkInMemory = MutableStateFlow<MemoryEntry?>(null)
+    val checkInMemory: StateFlow<MemoryEntry?> = _checkInMemory.asStateFlow()
+
+    val allCheckIns: Flow<List<CheckInEntry>> = MutableStateFlow<List<CheckInEntry>>(emptyList())
+    val checkInCount: Flow<Int> = MutableStateFlow(0)
+
+    // ══════════════════════════════════════════
+    // SHIELD PLAN STATE - خطة الحماية
+    // ══════════════════════════════════════════
+
+    val shieldPlanManager: ShieldPlanManager
+
+    private val _shieldPlans = MutableStateFlow<List<ShieldPlan>>(emptyList())
+    val shieldPlans: StateFlow<List<ShieldPlan>> = _shieldPlans.asStateFlow()
+
+    private val _editingPlan = MutableStateFlow<ShieldPlan?>(null)
+    val editingPlan: StateFlow<ShieldPlan?> = _editingPlan.asStateFlow()
+
+    // ══════════════════════════════════════════
+    // NOTIFICATION STATE
+    // ══════════════════════════════════════════
+
+    private val _morningEnabled = MutableStateFlow(true)
+    val morningEnabled: StateFlow<Boolean> = _morningEnabled.asStateFlow()
+
+    private val _morningHour = MutableStateFlow(7)
+    val morningHour: StateFlow<Int> = _morningHour.asStateFlow()
+
+    private val _morningMinute = MutableStateFlow(0)
+    val morningMinute: StateFlow<Int> = _morningMinute.asStateFlow()
+
+    private val _dangerHourEnabled = MutableStateFlow(true)
+    val dangerHourEnabled: StateFlow<Boolean> = _dangerHourEnabled.asStateFlow()
+
+    private val _dangerHourDetected = MutableStateFlow(false)
+    val dangerHourDetected: StateFlow<Boolean> = _dangerHourDetected.asStateFlow()
+
+    private val _dangerHourStart = MutableStateFlow(-1)
+    val dangerHourStart: StateFlow<Int> = _dangerHourStart.asStateFlow()
+
+    private val _dangerHourEnd = MutableStateFlow(-1)
+    val dangerHourEnd: StateFlow<Int> = _dangerHourEnd.asStateFlow()
+
+    private val _dangerAlertHour = MutableStateFlow(-1)
+    val dangerAlertHour: StateFlow<Int> = _dangerAlertHour.asStateFlow()
+
+    private val _dangerAlertMinute = MutableStateFlow(30)
+    val dangerAlertMinute: StateFlow<Int> = _dangerAlertMinute.asStateFlow()
+
+    private val _memoryResurfaceEnabled = MutableStateFlow(true)
+    val memoryResurfaceEnabled: StateFlow<Boolean> = _memoryResurfaceEnabled.asStateFlow()
+
+    private val _inactivityEnabled = MutableStateFlow(true)
+    val inactivityEnabled: StateFlow<Boolean> = _inactivityEnabled.asStateFlow()
+
+    private val _streakCelebrationEnabled = MutableStateFlow(true)
+    val streakCelebrationEnabled: StateFlow<Boolean> = _streakCelebrationEnabled.asStateFlow()
+
+    private val _postRelapseEnabled = MutableStateFlow(true)
+    val postRelapseEnabled: StateFlow<Boolean> = _postRelapseEnabled.asStateFlow()
+
     init {
         val database = JournalDatabase.getDatabase(application)
         val dao = database.journalDao()
@@ -97,6 +208,9 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         promiseManager = PromiseManager(application)
         dailyQuranManager = DailyQuranManager(application)
         onboardingManager = OnboardingManager(application)
+        exportManager = ExportManager(application)
+        notificationPreferences = NotificationPreferences(application)
+        notificationScheduler = NotificationScheduler(application)
 
         _isOnboardingCompleted.value = onboardingManager.isOnboardingCompleted()
 
@@ -107,7 +221,46 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         refreshStreakData()
         refreshPromiseData()
         refreshDailyAyah()
+        refreshNotificationSettings()
+
+        // Initialize memory bank flows
+        viewModelScope.launch {
+            repository.allMemories.collect { memories ->
+                (allMemories as MutableStateFlow).value = memories
+            }
+        }
+        viewModelScope.launch {
+            repository.memoryCount.collect { count ->
+                (memoryCount as MutableStateFlow).value = count
+            }
+        }
+
+        // Initialize check-in state
+        viewModelScope.launch {
+            repository.allCheckIns.collect { checkIns ->
+                (allCheckIns as MutableStateFlow).value = checkIns
+            }
+        }
+        viewModelScope.launch {
+            repository.checkInCount.collect { count ->
+                (checkInCount as MutableStateFlow).value = count
+            }
+        }
+
+        checkTodayCheckIn()
+        shieldPlanManager = ShieldPlanManager(application)
+        refreshShieldPlans()
+
+        // Cache a random memory for notifications
+        cacheMemoryForNotification()
+
+        // Calculate danger hour from existing data
+        updateDangerHourFromData()
     }
+
+    // ══════════════════════════════════════════
+    // EXISTING FUNCTIONS (unchanged)
+    // ══════════════════════════════════════════
 
     fun completeOnboarding(whyQuitting: String, firstPromise: String, firstDua: String) {
         if (whyQuitting.isNotBlank()) promiseManager.setWhyQuitting(whyQuitting)
@@ -142,6 +295,8 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     fun resetStreak(reason: String) {
         streakManager.resetStreak(reason)
         refreshStreakData()
+        // Schedule post-relapse follow-up notification
+        notificationScheduler.schedulePostRelapseFollowUp()
     }
 
     fun dismissMilestone() { _milestoneMessage.value = null }
@@ -190,6 +345,12 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
             )
             repository.insertEntry(entry)
             resetCurrentEntry()
+
+            // Update danger hour calculation after new entry
+            updateDangerHourFromData()
+
+            // Cache a fresh memory for notifications
+            cacheMemoryForNotification()
         }
     }
 
@@ -208,6 +369,127 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch { repository.deleteEntry(entry) }
     }
 
+    // ══════════════════════════════════════════
+    // SHIELD PLAN FUNCTIONS - خطة الحماية
+    // ══════════════════════════════════════════
+
+    fun refreshShieldPlans() {
+        _shieldPlans.value = shieldPlanManager.getShieldPlans()
+    }
+
+    fun setEditingPlan(plan: ShieldPlan?) {
+        _editingPlan.value = plan
+    }
+
+    fun updateShieldPlan(plan: ShieldPlan) {
+        shieldPlanManager.updatePlan(plan)
+        refreshShieldPlans()
+    }
+
+    fun addCustomShieldPlan(name: String, emoji: String, description: String, steps: List<String>, note: String) {
+        shieldPlanManager.addCustomPlan(name, emoji, description, steps, note)
+        refreshShieldPlans()
+    }
+
+    fun deleteShieldPlan(triggerId: String) {
+        shieldPlanManager.deletePlan(triggerId)
+        refreshShieldPlans()
+    }
+
+    // ══════════════════════════════════════════
+    // MEMORY BANK FUNCTIONS - بنك الذاكرة
+    // ══════════════════════════════════════════
+
+    fun saveRelapseLetter(message: String, trigger: String = "") {
+        viewModelScope.launch {
+            val memory = MemoryEntry(
+                type = MemoryEntry.TYPE_RELAPSE_LETTER,
+                message = message,
+                trigger = trigger,
+                streakAtTime = _currentStreak.value
+            )
+            repository.insertMemory(memory)
+            cacheMemoryForNotification()
+        }
+    }
+
+    fun saveVictoryNote(message: String) {
+        viewModelScope.launch {
+            val memory = MemoryEntry(
+                type = MemoryEntry.TYPE_VICTORY_NOTE,
+                message = message,
+                streakAtTime = _currentStreak.value,
+                urgeStrengthAtTime = _currentUrgeStrength.value
+            )
+            repository.insertMemory(memory)
+            cacheMemoryForNotification()
+        }
+    }
+
+    fun saveManualMemory(message: String) {
+        viewModelScope.launch {
+            val memory = MemoryEntry(
+                type = MemoryEntry.TYPE_MANUAL,
+                message = message,
+                streakAtTime = _currentStreak.value
+            )
+            repository.insertMemory(memory)
+            cacheMemoryForNotification()
+        }
+    }
+
+    fun toggleMemoryPin(memory: MemoryEntry) {
+        viewModelScope.launch {
+            repository.updateMemory(memory.copy(isPinned = !memory.isPinned))
+        }
+    }
+
+    fun deleteMemory(memory: MemoryEntry) {
+        viewModelScope.launch {
+            repository.deleteMemory(memory)
+        }
+    }
+
+    fun loadQuickCatchData() {
+        viewModelScope.launch {
+            _quickCatchRelapseLetter.value = repository.getMostRecentRelapseLetter()
+            _quickCatchVictoryNote.value = repository.getRandomVictoryNote()
+            _quickCatchRandomMemory.value = repository.getRandomPinnedMemory()
+                ?: repository.getRandomMemory()
+        }
+    }
+
+    fun logQuickCatch() {
+        _quickCatchCount.value += 1
+    }
+
+    fun loadInterventionMemory() {
+        viewModelScope.launch {
+            _interventionMemory.value =
+                repository.getRandomPinnedMemory()
+                    ?: repository.getRandomRelapseLetter()
+                            ?: repository.getRandomVictoryNote()
+                            ?: repository.getRandomMemory()
+        }
+    }
+
+    fun resetStreakWithLetter(reason: String, letterToSelf: String = "") {
+        if (letterToSelf.isNotBlank()) {
+            saveRelapseLetter(
+                message = letterToSelf,
+                trigger = reason
+            )
+        }
+        streakManager.resetStreak(reason)
+        refreshStreakData()
+        // Schedule post-relapse follow-up notification
+        notificationScheduler.schedulePostRelapseFollowUp()
+    }
+
+    // ══════════════════════════════════════════
+    // CLEAR ALL DATA
+    // ══════════════════════════════════════════
+
     fun clearAllData() {
         viewModelScope.launch {
             val database = JournalDatabase.getDatabase(getApplication())
@@ -218,12 +500,233 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
             app.getSharedPreferences("taqwa_promises", 0).edit().clear().apply()
             app.getSharedPreferences("taqwa_daily_quran", 0).edit().clear().apply()
             app.getSharedPreferences("taqwa_onboarding", 0).edit().clear().apply()
+            app.getSharedPreferences("taqwa_shield_plans", 0).edit().clear().apply()
+
+            // Cancel all notifications and clear preferences
+            notificationScheduler.cancelAll()
+            notificationPreferences.clearAll()
 
             streakManager.startNewStreak()
             refreshStreakData()
             refreshPromiseData()
             refreshDailyAyah()
+            refreshNotificationSettings()
             _isOnboardingCompleted.value = false
+            _todayCheckInDone.value = false
+            refreshShieldPlans()
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // MORNING CHECK-IN FUNCTIONS - الورد الصباحي
+    // ══════════════════════════════════════════
+
+    fun checkTodayCheckIn() {
+        viewModelScope.launch {
+            val today = java.time.LocalDate.now().toString()
+            val existing = repository.getCheckInForDate(today)
+            _todayCheckInDone.value = existing != null
+        }
+    }
+
+    fun loadCheckInMemory() {
+        viewModelScope.launch {
+            _checkInMemory.value =
+                repository.getRandomPinnedMemory()
+                    ?: repository.getRandomRelapseLetter()
+                            ?: repository.getRandomMemory()
+        }
+    }
+
+    fun saveCheckIn(mood: String, riskLevel: String, intention: String) {
+        viewModelScope.launch {
+            val today = java.time.LocalDate.now().toString()
+            val checkIn = CheckInEntry(
+                date = today,
+                mood = mood,
+                riskLevel = riskLevel,
+                intention = intention,
+                streakAtTime = _currentStreak.value
+            )
+            repository.insertCheckIn(checkIn)
+            _todayCheckInDone.value = true
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // EXPORT FUNCTIONS
+    // ══════════════════════════════════════════
+
+    suspend fun generateExportData(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        periodLabel: String
+    ): ReportData {
+        val startMs = startDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endMs = endDate.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+        val entries = repository.getEntriesInRange(startMs, endMs)
+        val memories = repository.getMemoriesInRange(startMs, endMs)
+        val checkIns = repository.getCheckInsInRange(startMs, endMs)
+
+        val allRelapses = streakManager.getRelapseHistory()
+        val filteredRelapses = allRelapses.filter { relapse ->
+            try {
+                val relapseDate = LocalDate.parse(relapse.date)
+                !relapseDate.isBefore(startDate) && !relapseDate.isAfter(endDate)
+            } catch (e: Exception) { false }
+        }
+
+        return ReportData(
+            periodLabel = periodLabel,
+            currentStreak = _currentStreak.value,
+            longestStreak = _longestStreak.value,
+            urgesDefeated = entries.size,
+            totalRelapses = filteredRelapses.size,
+            journalEntries = entries,
+            checkIns = checkIns,
+            relapses = filteredRelapses,
+            memories = memories,
+            shieldPlans = shieldPlanManager.getActivePlans()
+        )
+    }
+
+    fun exportReport(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        periodLabel: String,
+        options: ExportOptions,
+        onReady: (Intent) -> Unit
+    ) {
+        viewModelScope.launch {
+            val data = generateExportData(startDate, endDate, periodLabel)
+            val intent = exportManager.generateAndShare(data, options)
+            onReady(intent)
+        }
+    }
+
+    fun previewExport(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        periodLabel: String,
+        options: ExportOptions,
+        onReady: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            val data = generateExportData(startDate, endDate, periodLabel)
+            val preview = exportManager.generatePreview(data, options)
+            onReady(preview)
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // NOTIFICATION FUNCTIONS
+    // ══════════════════════════════════════════
+
+    fun refreshNotificationSettings() {
+        _morningEnabled.value = notificationPreferences.isMorningReminderEnabled()
+        _morningHour.value = notificationPreferences.getMorningHour()
+        _morningMinute.value = notificationPreferences.getMorningMinute()
+        _dangerHourEnabled.value = notificationPreferences.isDangerHourEnabled()
+        _dangerHourDetected.value = notificationPreferences.isDangerHourDetected()
+        _dangerHourStart.value = notificationPreferences.getDangerHourStart()
+        _dangerHourEnd.value = notificationPreferences.getDangerHourEnd()
+        _dangerAlertHour.value = notificationPreferences.getDangerAlertHour()
+        _dangerAlertMinute.value = notificationPreferences.getDangerAlertMinute()
+        _memoryResurfaceEnabled.value = notificationPreferences.isMemoryResurfaceEnabled()
+        _inactivityEnabled.value = notificationPreferences.isInactivityCheckEnabled()
+        _streakCelebrationEnabled.value = notificationPreferences.isStreakCelebrationEnabled()
+        _postRelapseEnabled.value = notificationPreferences.isPostRelapseEnabled()
+    }
+
+    fun setMorningReminderEnabled(enabled: Boolean) {
+        notificationPreferences.setMorningReminderEnabled(enabled)
+        _morningEnabled.value = enabled
+        if (enabled) {
+            notificationScheduler.scheduleMorningReminder(_currentStreak.value)
+        } else {
+            notificationScheduler.scheduleMorningReminder(_currentStreak.value)
+        }
+    }
+
+    fun setMorningTime(hour: Int, minute: Int) {
+        notificationPreferences.setMorningTime(hour, minute)
+        _morningHour.value = hour
+        _morningMinute.value = minute
+        notificationScheduler.scheduleMorningReminder(_currentStreak.value)
+    }
+
+    fun setDangerHourEnabled(enabled: Boolean) {
+        notificationPreferences.setDangerHourEnabled(enabled)
+        _dangerHourEnabled.value = enabled
+        notificationScheduler.scheduleDangerHourAlert(_currentStreak.value)
+    }
+
+    fun setMemoryResurfaceEnabled(enabled: Boolean) {
+        notificationPreferences.setMemoryResurfaceEnabled(enabled)
+        _memoryResurfaceEnabled.value = enabled
+        notificationScheduler.scheduleMemoryResurface()
+    }
+
+    fun setInactivityCheckEnabled(enabled: Boolean) {
+        notificationPreferences.setInactivityCheckEnabled(enabled)
+        _inactivityEnabled.value = enabled
+        notificationScheduler.scheduleInactivityCheck(_currentStreak.value)
+    }
+
+    fun setStreakCelebrationEnabled(enabled: Boolean) {
+        notificationPreferences.setStreakCelebrationEnabled(enabled)
+        _streakCelebrationEnabled.value = enabled
+    }
+
+    fun setPostRelapseEnabled(enabled: Boolean) {
+        notificationPreferences.setPostRelapseEnabled(enabled)
+        _postRelapseEnabled.value = enabled
+    }
+
+
+    /**
+     * Cache a random memory message for use in notifications.
+     * Called after saving any memory and on init.
+     */
+    private fun cacheMemoryForNotification() {
+        viewModelScope.launch {
+            val memory = repository.getRandomPinnedMemory()
+                ?: repository.getRandomRelapseLetter()
+                ?: repository.getRandomVictoryNote()
+                ?: repository.getRandomMemory()
+
+            if (memory != null) {
+                // Truncate to 100 chars for notification
+                val truncated = if (memory.message.length > 100) {
+                    memory.message.take(100) + "..."
+                } else {
+                    memory.message
+                }
+                notificationPreferences.setCachedMemory(truncated)
+            }
+        }
+    }
+
+    /**
+     * Analyze journal entry timestamps and update danger hour.
+     */
+    private fun updateDangerHourFromData() {
+        viewModelScope.launch {
+            repository.allEntries.collect { entries ->
+                if (entries.isNotEmpty()) {
+                    val timestamps = entries.map { it.timestamp }
+                    val detected = notificationScheduler.calculateDangerHour(timestamps)
+                    _dangerHourDetected.value = detected
+                    if (detected) {
+                        _dangerHourStart.value = notificationPreferences.getDangerHourStart()
+                        _dangerHourEnd.value = notificationPreferences.getDangerHourEnd()
+                        _dangerAlertHour.value = notificationPreferences.getDangerAlertHour()
+                        _dangerAlertMinute.value = notificationPreferences.getDangerAlertMinute()
+                        notificationScheduler.scheduleDangerHourAlert(_currentStreak.value)
+                    }
+                }
+            }
         }
     }
 }

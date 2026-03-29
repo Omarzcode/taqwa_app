@@ -3,6 +3,7 @@ package com.taqwa.journal.ui.screens
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,15 +32,21 @@ fun HomeScreen(
     longestStreak: Int,
     streakStatus: String,
     milestoneMessage: String?,
+    todayCheckInDone: Boolean = false,
     totalRelapses: Int,
     dailyAyah: DailyAyah?,
+    memoryCount: Int = 0,
     onDismissMilestone: () -> Unit,
     onUrgeClick: () -> Unit,
+    onMorningCheckInClick: () -> Unit = {},
+    onQuickCatchClick: () -> Unit = {},
     onResetStreakClick: () -> Unit,
     onPastEntriesClick: () -> Unit = {},
     onRelapseHistoryClick: () -> Unit = {},
     onPatternAnalysisClick: () -> Unit = {},
     onPromiseWallClick: () -> Unit = {},
+    onMemoryBankClick: () -> Unit = {},
+    onShieldPlansClick: () -> Unit = {},
     onCalendarClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {}
 ) {
@@ -116,7 +123,33 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(TaqwaDimens.spaceXL))
 
-        // ── Daily Ayah (TOP — Spiritual Grounding) ──
+        // ── Morning Check-In (TOP — if not done) ──
+        if (!todayCheckInDone) {
+            TaqwaAccentCard(accentColor = AccentOrange, alpha = 0.08f) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onMorningCheckInClick),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "☀️ Morning Check-In",
+                        style = TaqwaType.cardTitle,
+                        color = AccentOrangeLight
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+                    Text(
+                        text = "Start your day with awareness and strength",
+                        style = TaqwaType.captionSmall,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXL))
+        }
+
+        // ── Daily Ayah (Spiritual Grounding) ──
         if (dailyAyah != null) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -149,7 +182,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-            // Subtle divider
             Box(
                 modifier = Modifier
                     .width(40.dp)
@@ -167,7 +199,6 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Streak emoji based on progress
                 val streakEmoji = when {
                     currentStreak >= 100 -> "💎"
                     currentStreak >= 30 -> "🏆"
@@ -222,12 +253,11 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
 
-        // ── Urge Button — Modern Pill Design ──
+        // ── Urge Button — Main (Full Flow) ──
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Outer glow ring
             Box(
                 modifier = Modifier
                     .width(220.dp)
@@ -245,7 +275,6 @@ fun HomeScreen(
                     )
             )
 
-            // Main button
             Button(
                 onClick = onUrgeClick,
                 modifier = Modifier
@@ -263,10 +292,7 @@ fun HomeScreen(
                         .fillMaxSize()
                         .background(
                             Brush.horizontalGradient(
-                                colors = listOf(
-                                    UrgeButtonRed,
-                                    UrgeButtonRedDark
-                                )
+                                colors = listOf(UrgeButtonRed, UrgeButtonRedDark)
                             ),
                             RoundedCornerShape(28.dp)
                         )
@@ -286,7 +312,6 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
-                        // Pulsing dot
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
@@ -310,14 +335,68 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
-        // Subtitle under button
         Text(
             text = "Tap when you feel an urge",
             style = TaqwaType.caption,
             color = TextMuted
         )
 
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+
+        // ── Quick Catch Button ──
+        OutlinedButton(
+            onClick = onQuickCatchClick,
+            modifier = Modifier
+                .width(200.dp)
+                .height(44.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = VanillaCustard
+            ),
+            border = ButtonDefaults.outlinedButtonBorder.copy(
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        PrimaryLight.copy(alpha = 0.4f),
+                        PrimaryLight.copy(alpha = 0.2f)
+                    )
+                )
+            ),
+            shape = RoundedCornerShape(22.dp)
+        ) {
+            Text(
+                text = "🛡️  Quick Catch",
+                style = TaqwaType.button.copy(
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = VanillaCustard.copy(alpha = 0.8f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXS))
+
+        Text(
+            text = "Just a thought? Catch it fast",
+            style = TaqwaType.captionSmall,
+            color = TextMuted.copy(alpha = 0.6f)
+        )
+
         Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
+
+        // ── Tools Section ──
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            ToolButton(emoji = "🛡️", label = "Shield\nPlans", onClick = onShieldPlansClick)
+            ToolButton(emoji = "🧠", label = "Memory\nBank", count = if (memoryCount > 0) memoryCount else null, onClick = onMemoryBankClick)
+            ToolButton(
+                emoji = "☀️",
+                label = if (todayCheckInDone) "Check-In\n✓ Done" else "Check-In",
+                onClick = onMorningCheckInClick
+            )
+        }
+
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
         // ── Relapse (extremely subtle) ──
         TextButton(
@@ -349,6 +428,32 @@ private fun MiniStat(emoji: String, value: String, label: String) {
             text = label,
             style = TaqwaType.statLabel,
             color = TextGray
+        )
+    }
+}
+
+@Composable
+private fun ToolButton(
+    emoji: String,
+    label: String,
+    count: Int? = null,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = TaqwaDimens.spaceM, vertical = TaqwaDimens.spaceS)
+    ) {
+        Text(text = emoji, fontSize = 24.sp)
+        Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+        Text(
+            text = if (count != null) "$label ($count)" else label,
+            style = TaqwaType.captionSmall,
+            color = TextGray,
+            textAlign = TextAlign.Center,
+            lineHeight = 14.sp
         )
     }
 }

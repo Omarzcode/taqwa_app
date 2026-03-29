@@ -1,6 +1,7 @@
 package com.taqwa.journal.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +27,8 @@ fun SettingsScreen(
     longestStreak: Int,
     onClearAllData: () -> Unit,
     onRelapseHistoryClick: () -> Unit,
+    onExportClick: () -> Unit = {},
+    onNotificationSettingsClick: () -> Unit = {},
     onBack: () -> Unit
 ) {
     var showClearDataDialog by remember { mutableStateOf(false) }
@@ -72,6 +75,56 @@ fun SettingsScreen(
                         text = "Your journey to purity",
                         style = TaqwaType.body,
                         color = TextLight
+                    )
+                }
+            }
+
+            // ── Notification Settings ──
+            TaqwaCard {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onNotificationSettingsClick),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "🔔", fontSize = 28.sp)
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                    Text(
+                        text = "Smart Notifications",
+                        style = TaqwaType.cardTitle,
+                        color = VanillaCustard
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+                    Text(
+                        text = "Morning reminders, danger alerts, memory resurface & more",
+                        style = TaqwaType.captionSmall,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            // ── Export Report ──
+            TaqwaCard {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onExportClick),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "📤", fontSize = 28.sp)
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                    Text(
+                        text = "Export Report",
+                        style = TaqwaType.cardTitle,
+                        color = VanillaCustard
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
+                    Text(
+                        text = "Export your journal data as a shareable report",
+                        style = TaqwaType.captionSmall,
+                        color = TextMuted,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
