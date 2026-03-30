@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [JournalEntry::class, MemoryEntry::class, CheckInEntry::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class JournalDatabase : RoomDatabase() {
@@ -38,7 +38,7 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
-        // Migration from v2 to v3 (+ CheckInEntry)
+        // Migration from v2 to v3 (+ CheckInEntry with wrong column name)
         private val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -55,7 +55,42 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
-        // For fresh installs jumping from v1 to v3
+        // Migration from v3 to v4: Fix column name riskLevel -> risk_level
+        // and streakAtTime -> streak_at_time to match @ColumnInfo annotations
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Recreate checkin_entries with correct column names
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS checkin_entries_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        date TEXT NOT NULL,
+                        mood TEXT NOT NULL,
+                        risk_level TEXT NOT NULL,
+                        intention TEXT NOT NULL DEFAULT '',
+                        streak_at_time INTEGER NOT NULL DEFAULT 0
+                    )
+                """)
+
+                // Copy data from old table to new (mapping old column names to new)
+                db.execSQL("""
+                    INSERT INTO checkin_entries_new (id, timestamp, date, mood, risk_level, intention, streak_at_time)
+                    SELECT id, timestamp, date, mood, riskLevel, intention, streakAtTime
+                    FROM checkin_entries
+                """)
+
+                // Drop old table
+                db.execSQL("DROP TABLE checkin_entries")
+
+                // Rename new table
+                db.execSQL("ALTER TABLE checkin_entries_new RENAME TO checkin_entries")
+
+                // Recreate unique index on date
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_checkin_entries_date ON checkin_entries (date)")
+            }
+        }
+
+        // For fresh installs jumping from v1 to v4
         private val MIGRATION_1_3 = object : Migration(1, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("""
@@ -91,7 +126,13 @@ abstract class JournalDatabase : RoomDatabase() {
                     JournalDatabase::class.java,
                     "taqwa_journal_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_1_3)
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_1_3,
+                        MIGRATION_3_4
+                    )
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance

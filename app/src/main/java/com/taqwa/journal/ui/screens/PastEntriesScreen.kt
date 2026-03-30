@@ -18,7 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.database.JournalEntry
-import com.taqwa.journal.ui.components.EmptyState
+import com.taqwa.journal.ui.components.EmptyStateCard
 import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
 import java.text.SimpleDateFormat
@@ -42,13 +42,19 @@ fun PastEntriesScreen(
         )
 
         if (entries.isEmpty()) {
-            EmptyState(
-                emoji = "📝",
-                title = "No entries yet",
-                description = "Your journal entries will appear here\nafter you complete an urge flow."
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    emoji = "📝",
+                    title = "No entries yet",
+                    subtitle = "Your journal entries will appear here\nafter you complete an urge flow."
+                )
+            }
         } else {
-            // Entry count header
             Text(
                 text = "${entries.size} ${if (entries.size == 1) "entry" else "entries"}",
                 style = TaqwaType.caption,
@@ -109,7 +115,6 @@ private fun EntryCard(
                 .fillMaxWidth()
                 .padding(TaqwaDimens.spaceL)
         ) {
-            // Date and urge strength row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -133,10 +138,8 @@ private fun EntryCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(TaqwaDimens.spaceS)
                 ) {
-                    // Urge strength badge
                     UrgeStrengthBadge(strength = entry.urgeStrength)
 
-                    // Delete button
                     IconButton(
                         onClick = { showDeleteDialog = true },
                         modifier = Modifier.size(32.dp)
@@ -153,7 +156,6 @@ private fun EntryCard(
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
-            // Feelings
             if (entry.feelings.isNotEmpty()) {
                 Text(
                     text = entry.feelings.replace(",", "  •  "),
@@ -165,7 +167,6 @@ private fun EntryCard(
                 Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
             }
 
-            // Free text preview
             if (entry.freeText.isNotEmpty()) {
                 Text(
                     text = entry.freeText,
@@ -179,7 +180,6 @@ private fun EntryCard(
         }
     }
 
-    // Delete dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },

@@ -101,7 +101,8 @@ interface JournalDao {
     // MORNING CHECK-IN - الورد الصباحي
     // ══════════════════════════════════════════
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // ABORT on duplicate date (user can only check in once per day)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertCheckIn(checkIn: CheckInEntry)
 
     // Get all check-ins, newest first
@@ -124,10 +125,9 @@ interface JournalDao {
     @Query("SELECT * FROM checkin_entries WHERE mood = :mood ORDER BY timestamp DESC")
     fun getCheckInsByMood(mood: String): Flow<List<CheckInEntry>>
 
-    // Get check-ins by risk level
-    @Query("SELECT * FROM checkin_entries WHERE riskLevel = :riskLevel ORDER BY timestamp DESC")
+    // ✅ CORRECT — use the @ColumnInfo name "risk_level"
+    @Query("SELECT * FROM checkin_entries WHERE risk_level = :riskLevel ORDER BY timestamp DESC")
     fun getCheckInsByRisk(riskLevel: String): Flow<List<CheckInEntry>>
-
     // Delete a check-in
     @Delete
     suspend fun deleteCheckIn(checkIn: CheckInEntry)

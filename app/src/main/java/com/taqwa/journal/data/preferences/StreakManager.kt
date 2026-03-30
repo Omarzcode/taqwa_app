@@ -2,9 +2,15 @@ package com.taqwa.journal.data.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.taqwa.journal.data.utilities.CsvPreferenceParser
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+/**
+ * Manages user's streak, relapse history, and milestones.
+ * Refactored to use CsvPreferenceParser for relapse history (nested CSV structure).
+ * Eliminates ~20 LOC of manual CSV parsing and fixes escaping vulnerabilities.
+ */
 class StreakManager(context: Context) {
 
     private val prefs: SharedPreferences =
@@ -16,6 +22,9 @@ class StreakManager(context: Context) {
         private const val KEY_TOTAL_RELAPSES = "total_relapses"
         private const val KEY_RELAPSE_HISTORY = "relapse_history"
         private const val KEY_LAST_MILESTONE_SHOWN = "last_milestone_shown"
+
+        // Delimiter for nested CSV (entry level)
+        private const val ENTRY_DELIMITER = ";;;"
     }
 
     // Get current streak in days
@@ -50,11 +59,32 @@ class StreakManager(context: Context) {
         val totalRelapses = getTotalRelapses()
         prefs.edit().putInt(KEY_TOTAL_RELAPSES, totalRelapses + 1).apply()
 
-        val history = getRelapseHistoryRaw()
-        val newEntry = "${LocalDate.now()}|||${reason}|||${currentStreak}"
-        val updatedHistory = if (history.isEmpty()) newEntry else "$newEntry;;;$history"
-        prefs.edit().putString(KEY_RELAPSE_HISTORY, updatedHistory).apply()
+        // Use CsvPreferenceParser for relapse history management
+        val relapseHistoryRaw = getRelapseHistoryRaw()
+        val currentHistory = CsvPreferenceParser.parseNested(
+            relapseHistoryRaw,
+            ENTRY_DELIMITER
+        ) { fields ->
+            if (fields.size >= 3) {
+                RelapseRecord(fields[0], fields[1], fields[2].toIntOrNull() ?: 0)
+            } else null
+        }
 
+        // Create new entry
+        val newEntry = RelapseRecord(LocalDate.now().toString(), reason, currentStreak)
+
+        // Prepend new entry to history (newest first)
+        val updatedHistory = listOf(newEntry) + currentHistory
+
+        // Serialize back using CsvPreferenceParser
+        val newHistoryString = CsvPreferenceParser.serializeNested(
+            updatedHistory,
+            ENTRY_DELIMITER
+        ) { record ->
+            listOf(record.date, record.reason, record.streakLost.toString())
+        }
+
+        prefs.edit().putString(KEY_RELAPSE_HISTORY, newHistoryString).apply()
         startNewStreak()
     }
 
@@ -73,15 +103,15 @@ class StreakManager(context: Context) {
     // Get relapse history as list
     fun getRelapseHistory(): List<RelapseRecord> {
         val raw = getRelapseHistoryRaw()
-        if (raw.isEmpty()) return emptyList()
-
-        return raw.split(";;;").mapNotNull { entry ->
-            val parts = entry.split("|||")
-            if (parts.size == 3) {
+        return CsvPreferenceParser.parseNested(
+            raw,
+            ENTRY_DELIMITER
+        ) { fields ->
+            if (fields.size >= 3) {
                 RelapseRecord(
-                    date = parts[0],
-                    reason = parts[1],
-                    streakLost = parts[2].toIntOrNull() ?: 0
+                    date = fields[0],
+                    reason = fields[1],
+                    streakLost = fields[2].toIntOrNull() ?: 0
                 )
             } else null
         }

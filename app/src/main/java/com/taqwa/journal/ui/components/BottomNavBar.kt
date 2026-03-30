@@ -30,9 +30,7 @@ enum class BottomNavItem(
     val route: String
 ) {
     HOME("Home", "🏠", "home"),
-    JOURNAL("Journal", "📖", "past_entries"),
-    CALENDAR("Calendar", "📅", "calendar"),
-    INSIGHTS("Insights", "📊", "pattern_analysis"),
+    TOOLS("Tools", "🧰", "tools"),
     SETTINGS("Settings", "⚙️", "settings")
 }
 

@@ -21,6 +21,7 @@ import com.taqwa.journal.data.preferences.ShieldPlan
 import com.taqwa.journal.data.preferences.ShieldPlanManager
 import com.taqwa.journal.data.preferences.StreakManager
 import com.taqwa.journal.data.repository.JournalRepository
+import com.taqwa.journal.data.utilities.Validators
 import com.taqwa.journal.notification.NotificationScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -334,23 +335,38 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
     fun saveEntry() {
         viewModelScope.launch {
-            val entry = JournalEntry(
-                situationContext = _currentSituationContext.value,
-                feelings = _currentFeelings.value.joinToString(","),
-                realNeed = _currentRealNeed.value.joinToString(","),
-                alternativeChosen = _currentAlternative.value.joinToString(","),
-                urgeStrength = _currentUrgeStrength.value,
-                freeText = _currentFreeText.value,
-                completed = true
-            )
-            repository.insertEntry(entry)
-            resetCurrentEntry()
+            try {
+                // Validate at least one question answered
+                val hasContent = _currentSituationContext.value.isNotBlank() ||
+                        _currentFeelings.value.isNotEmpty() ||
+                        _currentRealNeed.value.isNotEmpty() ||
+                        _currentAlternative.value.isNotEmpty() ||
+                        _currentFreeText.value.isNotBlank()
+                require(hasContent) { "Please answer at least one question before saving" }
 
-            // Update danger hour calculation after new entry
-            updateDangerHourFromData()
+                // Validate urge strength using centralized validator
+                Validators.requireValidUrgeStrength(_currentUrgeStrength.value)
 
-            // Cache a fresh memory for notifications
-            cacheMemoryForNotification()
+                val entry = JournalEntry(
+                    situationContext = _currentSituationContext.value,
+                    feelings = _currentFeelings.value.joinToString(","),
+                    realNeed = _currentRealNeed.value.joinToString(","),
+                    alternativeChosen = _currentAlternative.value.joinToString(","),
+                    urgeStrength = _currentUrgeStrength.value,
+                    freeText = _currentFreeText.value,
+                    completed = true
+                )
+                repository.insertEntry(entry)
+                resetCurrentEntry()
+
+                // Update danger hour calculation after new entry
+                updateDangerHourFromData()
+
+                // Cache a fresh memory for notifications
+                cacheMemoryForNotification()
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -402,39 +418,57 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
     fun saveRelapseLetter(message: String, trigger: String = "") {
         viewModelScope.launch {
-            val memory = MemoryEntry(
-                type = MemoryEntry.TYPE_RELAPSE_LETTER,
-                message = message,
-                trigger = trigger,
-                streakAtTime = _currentStreak.value
-            )
-            repository.insertMemory(memory)
-            cacheMemoryForNotification()
+            try {
+                Validators.requireValidMessageLength(message)
+
+                val memory = MemoryEntry(
+                    type = MemoryEntry.TYPE_RELAPSE_LETTER,
+                    message = message,
+                    trigger = trigger,
+                    streakAtTime = _currentStreak.value
+                )
+                repository.insertMemory(memory)
+                cacheMemoryForNotification()
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun saveVictoryNote(message: String) {
         viewModelScope.launch {
-            val memory = MemoryEntry(
-                type = MemoryEntry.TYPE_VICTORY_NOTE,
-                message = message,
-                streakAtTime = _currentStreak.value,
-                urgeStrengthAtTime = _currentUrgeStrength.value
-            )
-            repository.insertMemory(memory)
-            cacheMemoryForNotification()
+            try {
+                Validators.requireValidMessageLength(message)
+
+                val memory = MemoryEntry(
+                    type = MemoryEntry.TYPE_VICTORY_NOTE,
+                    message = message,
+                    streakAtTime = _currentStreak.value,
+                    urgeStrengthAtTime = _currentUrgeStrength.value
+                )
+                repository.insertMemory(memory)
+                cacheMemoryForNotification()
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
         }
     }
 
     fun saveManualMemory(message: String) {
         viewModelScope.launch {
-            val memory = MemoryEntry(
-                type = MemoryEntry.TYPE_MANUAL,
-                message = message,
-                streakAtTime = _currentStreak.value
-            )
-            repository.insertMemory(memory)
-            cacheMemoryForNotification()
+            try {
+                Validators.requireValidMessageLength(message)
+
+                val memory = MemoryEntry(
+                    type = MemoryEntry.TYPE_MANUAL,
+                    message = message,
+                    streakAtTime = _currentStreak.value
+                )
+                repository.insertMemory(memory)
+                cacheMemoryForNotification()
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -540,16 +574,25 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
     fun saveCheckIn(mood: String, riskLevel: String, intention: String) {
         viewModelScope.launch {
-            val today = java.time.LocalDate.now().toString()
-            val checkIn = CheckInEntry(
-                date = today,
-                mood = mood,
-                riskLevel = riskLevel,
-                intention = intention,
-                streakAtTime = _currentStreak.value
-            )
-            repository.insertCheckIn(checkIn)
-            _todayCheckInDone.value = true
+            try {
+                // Validate using centralized validators
+                Validators.requireValidMood(mood)
+                Validators.requireValidRiskLevel(riskLevel)
+                Validators.requireValidIntentionLength(intention)
+
+                val today = java.time.LocalDate.now().toString()
+                val checkIn = CheckInEntry(
+                    date = today,
+                    mood = mood,
+                    riskLevel = riskLevel,
+                    intention = intention,
+                    streakAtTime = _currentStreak.value
+                )
+                repository.insertCheckIn(checkIn)
+                _todayCheckInDone.value = true
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
         }
     }
 

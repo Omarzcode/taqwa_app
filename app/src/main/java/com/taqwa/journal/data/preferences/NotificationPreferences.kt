@@ -2,6 +2,7 @@ package com.taqwa.journal.data.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.taqwa.journal.data.utilities.PreferenceToggleManager
 
 /**
  * Notification Preferences — إعدادات التنبيهات
@@ -9,6 +10,9 @@ import android.content.SharedPreferences
  * Stores user preferences for each notification type,
  * last app open time, cached memories for notifications,
  * and detected danger hour.
+ *
+ * Refactored to use PreferenceToggleManager for boolean toggles
+ * (eliminates ~60 LOC of duplicate get/set pairs).
  */
 class NotificationPreferences(context: Context) {
 
@@ -46,38 +50,37 @@ class NotificationPreferences(context: Context) {
     }
 
     // ══════════════════════════════════════════
-    // TOGGLE GETTERS/SETTERS
+    // TOGGLE MANAGERS (Generic utility)
     // ══════════════════════════════════════════
 
-    fun isMorningReminderEnabled(): Boolean = prefs.getBoolean(KEY_MORNING_ENABLED, true)
-    fun setMorningReminderEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_MORNING_ENABLED, enabled).apply()
-    }
+    private val morningToggle = PreferenceToggleManager(prefs, KEY_MORNING_ENABLED, true)
+    private val dangerHourToggle = PreferenceToggleManager(prefs, KEY_DANGER_HOUR_ENABLED, true)
+    private val memoryResurfaceToggle = PreferenceToggleManager(prefs, KEY_MEMORY_RESURFACE_ENABLED, true)
+    private val inactivityToggle = PreferenceToggleManager(prefs, KEY_INACTIVITY_ENABLED, true)
+    private val streakCelebrationToggle = PreferenceToggleManager(prefs, KEY_STREAK_CELEBRATION_ENABLED, true)
+    private val postRelapseToggle = PreferenceToggleManager(prefs, KEY_POST_RELAPSE_ENABLED, true)
 
-    fun isDangerHourEnabled(): Boolean = prefs.getBoolean(KEY_DANGER_HOUR_ENABLED, true)
-    fun setDangerHourEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_DANGER_HOUR_ENABLED, enabled).apply()
-    }
+    // ══════════════════════════════════════════
+    // TOGGLE ACCESSORS (Delegated to managers)
+    // ══════════════════════════════════════════
 
-    fun isMemoryResurfaceEnabled(): Boolean = prefs.getBoolean(KEY_MEMORY_RESURFACE_ENABLED, true)
-    fun setMemoryResurfaceEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_MEMORY_RESURFACE_ENABLED, enabled).apply()
-    }
+    fun isMorningReminderEnabled(): Boolean = morningToggle.isEnabled()
+    fun setMorningReminderEnabled(enabled: Boolean) = morningToggle.setEnabled(enabled)
 
-    fun isInactivityCheckEnabled(): Boolean = prefs.getBoolean(KEY_INACTIVITY_ENABLED, true)
-    fun setInactivityCheckEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_INACTIVITY_ENABLED, enabled).apply()
-    }
+    fun isDangerHourEnabled(): Boolean = dangerHourToggle.isEnabled()
+    fun setDangerHourEnabled(enabled: Boolean) = dangerHourToggle.setEnabled(enabled)
 
-    fun isStreakCelebrationEnabled(): Boolean = prefs.getBoolean(KEY_STREAK_CELEBRATION_ENABLED, true)
-    fun setStreakCelebrationEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_STREAK_CELEBRATION_ENABLED, enabled).apply()
-    }
+    fun isMemoryResurfaceEnabled(): Boolean = memoryResurfaceToggle.isEnabled()
+    fun setMemoryResurfaceEnabled(enabled: Boolean) = memoryResurfaceToggle.setEnabled(enabled)
 
-    fun isPostRelapseEnabled(): Boolean = prefs.getBoolean(KEY_POST_RELAPSE_ENABLED, true)
-    fun setPostRelapseEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_POST_RELAPSE_ENABLED, enabled).apply()
-    }
+    fun isInactivityCheckEnabled(): Boolean = inactivityToggle.isEnabled()
+    fun setInactivityCheckEnabled(enabled: Boolean) = inactivityToggle.setEnabled(enabled)
+
+    fun isStreakCelebrationEnabled(): Boolean = streakCelebrationToggle.isEnabled()
+    fun setStreakCelebrationEnabled(enabled: Boolean) = streakCelebrationToggle.setEnabled(enabled)
+
+    fun isPostRelapseEnabled(): Boolean = postRelapseToggle.isEnabled()
+    fun setPostRelapseEnabled(enabled: Boolean) = postRelapseToggle.setEnabled(enabled)
 
     // ══════════════════════════════════════════
     // MORNING REMINDER TIME

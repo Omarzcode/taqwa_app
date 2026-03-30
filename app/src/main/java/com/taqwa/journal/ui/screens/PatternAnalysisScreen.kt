@@ -15,7 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.database.JournalEntry
-import com.taqwa.journal.ui.components.EmptyState
+import com.taqwa.journal.ui.components.EmptyStateCard
 import com.taqwa.journal.ui.components.TaqwaAccentCard
 import com.taqwa.journal.ui.components.TaqwaCard
 import com.taqwa.journal.ui.components.TaqwaTopBar
@@ -39,27 +39,35 @@ fun PatternAnalysisScreen(
         )
 
         if (entries.size < 3) {
-            EmptyState(
-                emoji = "📊",
-                title = "Need More Data",
-                description = "Complete at least 3 urge entries\nto see your patterns.\n\nYou have ${entries.size} so far."
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+                contentAlignment = Alignment.Center
             ) {
-                Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
-                LinearProgressIndicator(
-                    progress = { entries.size / 3f },
-                    modifier = Modifier
-                        .fillMaxWidth(0.5f)
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp)),
-                    color = PrimaryLight,
-                    trackColor = BackgroundLight
-                )
-                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
-                Text(
-                    text = "${entries.size}/3 entries",
-                    style = TaqwaType.caption,
-                    color = TextGray
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    EmptyStateCard(
+                        emoji = "📊",
+                        title = "Need More Data",
+                        subtitle = "Complete at least 3 urge entries\nto see your patterns.\n\nYou have ${entries.size} so far."
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+                    LinearProgressIndicator(
+                        progress = { entries.size / 3f },
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = PrimaryLight,
+                        trackColor = BackgroundLight
+                    )
+                    Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                    Text(
+                        text = "${entries.size}/3 entries",
+                        style = TaqwaType.caption,
+                        color = TextGray
+                    )
+                }
             }
         } else {
             Column(

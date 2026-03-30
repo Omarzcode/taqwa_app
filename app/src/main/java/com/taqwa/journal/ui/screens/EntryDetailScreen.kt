@@ -10,10 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.database.JournalEntry
-import com.taqwa.journal.ui.components.EmptyState
+import com.taqwa.journal.ui.components.EmptyStateCard
 import com.taqwa.journal.ui.components.TaqwaCard
 import com.taqwa.journal.ui.components.TaqwaTopBar
 import com.taqwa.journal.ui.theme.*
@@ -36,11 +35,18 @@ fun EntryDetailScreen(
         )
 
         if (entry == null) {
-            EmptyState(
-                emoji = "🔍",
-                title = "Entry not found",
-                description = "This entry may have been deleted."
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    emoji = "🔍",
+                    title = "Entry not found",
+                    subtitle = "This entry may have been deleted."
+                )
+            }
         } else {
             val dateFormat = SimpleDateFormat("EEEE, MMM dd, yyyy", Locale.getDefault())
             val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
@@ -55,7 +61,6 @@ fun EntryDetailScreen(
             ) {
                 Spacer(modifier = Modifier.height(TaqwaDimens.spaceXS))
 
-                // Header card
                 TaqwaCard {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -81,7 +86,6 @@ fun EntryDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
-                        // Urge strength badge
                         val strengthColor = when {
                             entry.urgeStrength <= 3 -> AccentGreen
                             entry.urgeStrength <= 6 -> AccentOrange
@@ -106,7 +110,6 @@ fun EntryDetailScreen(
                     }
                 }
 
-                // Detail sections
                 if (entry.situationContext.isNotEmpty()) {
                     DetailSection(
                         icon = "📍",

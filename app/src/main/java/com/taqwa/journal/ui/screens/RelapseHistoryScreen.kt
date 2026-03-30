@@ -4,17 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.data.preferences.RelapseRecord
-import com.taqwa.journal.ui.components.EmptyState
+import com.taqwa.journal.ui.components.EmptyStateCard
 import com.taqwa.journal.ui.components.TaqwaAccentCard
 import com.taqwa.journal.ui.components.TaqwaCard
 import com.taqwa.journal.ui.components.TaqwaTopBar
@@ -39,11 +37,18 @@ fun RelapseHistoryScreen(
         )
 
         if (relapseHistory.isEmpty()) {
-            EmptyState(
-                emoji = "🏆",
-                title = "No relapses recorded",
-                description = "Keep going strong!\nMay Allah keep you steadfast."
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = TaqwaDimens.screenPaddingHorizontal),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyStateCard(
+                    emoji = "🏆",
+                    title = "No relapses recorded",
+                    subtitle = "Keep going strong!\nMay Allah keep you steadfast."
+                )
+            }
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -55,7 +60,6 @@ fun RelapseHistoryScreen(
                     bottom = TaqwaDimens.spaceL
                 )
             ) {
-                // Summary
                 item {
                     TaqwaCard {
                         Column(
@@ -79,7 +83,6 @@ fun RelapseHistoryScreen(
                     }
                 }
 
-                // Relapse entries
                 itemsIndexed(relapseHistory) { index, record ->
                     RelapseCard(
                         number = index + 1,
@@ -87,7 +90,6 @@ fun RelapseHistoryScreen(
                     )
                 }
 
-                // Encouragement
                 item {
                     TaqwaAccentCard(accentColor = PrimaryDark, alpha = 0.3f) {
                         Column(
@@ -134,7 +136,6 @@ private fun RelapseCard(
 
     TaqwaCard {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -154,7 +155,6 @@ private fun RelapseCard(
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
 
-            // Streak lost
             if (record.streakLost > 0) {
                 Text(
                     text = "📉 Lost a ${record.streakLost}-day streak",
@@ -164,7 +164,6 @@ private fun RelapseCard(
                 Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
             }
 
-            // Reason
             if (record.reason.isNotEmpty()) {
                 Text(
                     text = "💭 Reflection:",

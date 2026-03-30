@@ -1,12 +1,15 @@
 package com.taqwa.journal.data.preferences
 
 import android.content.Context
-import android.content.SharedPreferences
+import com.taqwa.journal.data.utilities.PreferenceListManager
 
+/**
+ * Manages user promises, duas, reminders, and motivation.
+ * Refactored to use generic PreferenceListManager (eliminates ~90 LOC of duplication).
+ */
 class PromiseManager(context: Context) {
 
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences("taqwa_promises", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("taqwa_promises", Context.MODE_PRIVATE)
 
     companion object {
         private const val KEY_PROMISES = "promises"
@@ -15,87 +18,51 @@ class PromiseManager(context: Context) {
         private const val KEY_REMINDERS = "personal_reminders"
     }
 
-    // ========================
+    // Delegate list management to generic utility
+    private val promisesManager = PreferenceListManager(prefs, KEY_PROMISES)
+    private val duasManager = PreferenceListManager(prefs, KEY_DUAS)
+    private val remindersManager = PreferenceListManager(prefs, KEY_REMINDERS)
+
+    // ════════════════════════════════════════
     // PROMISES
-    // ========================
-    fun getPromises(): List<String> {
-        val raw = prefs.getString(KEY_PROMISES, "") ?: ""
-        if (raw.isEmpty()) return emptyList()
-        return raw.split("|||").filter { it.isNotEmpty() }
-    }
+    // ════════════════════════════════════════
 
-    fun addPromise(promise: String) {
-        val current = getPromises().toMutableList()
-        current.add(promise)
-        prefs.edit().putString(KEY_PROMISES, current.joinToString("|||")).apply()
-    }
+    fun getPromises(): List<String> = promisesManager.getAll()
+    fun addPromise(promise: String) = promisesManager.add(promise)
+    fun deletePromise(index: Int) = promisesManager.removeAt(index)
 
-    fun deletePromise(index: Int) {
-        val current = getPromises().toMutableList()
-        if (index in current.indices) {
-            current.removeAt(index)
-            prefs.edit().putString(KEY_PROMISES, current.joinToString("|||")).apply()
-        }
-    }
-
-    // ========================
+    // ════════════════════════════════════════
     // WHY I'M QUITTING
-    // ========================
-    fun getWhyQuitting(): String {
-        return prefs.getString(KEY_WHY_QUITTING, "") ?: ""
-    }
+    // ════════════════════════════════════════
 
+    fun getWhyQuitting(): String = prefs.getString(KEY_WHY_QUITTING, "") ?: ""
     fun setWhyQuitting(why: String) {
         prefs.edit().putString(KEY_WHY_QUITTING, why).apply()
     }
 
-    // ========================
+    // ════════════════════════════════════════
     // PERSONAL DUAS
-    // ========================
-    fun getDuas(): List<String> {
-        val raw = prefs.getString(KEY_DUAS, "") ?: ""
-        if (raw.isEmpty()) return emptyList()
-        return raw.split("|||").filter { it.isNotEmpty() }
-    }
+    // ════════════════════════════════════════
 
-    fun addDua(dua: String) {
-        val current = getDuas().toMutableList()
-        current.add(dua)
-        prefs.edit().putString(KEY_DUAS, current.joinToString("|||")).apply()
-    }
+    fun getDuas(): List<String> = duasManager.getAll()
+    fun addDua(dua: String) = duasManager.add(dua)
+    fun deleteDua(index: Int) = duasManager.removeAt(index)
 
-    fun deleteDua(index: Int) {
-        val current = getDuas().toMutableList()
-        if (index in current.indices) {
-            current.removeAt(index)
-            prefs.edit().putString(KEY_DUAS, current.joinToString("|||")).apply()
-        }
-    }
-
-    // ========================
+    // ════════════════════════════════════════
     // PERSONAL REMINDERS
-    // ========================
-    fun getReminders(): List<String> {
-        val raw = prefs.getString(KEY_REMINDERS, "") ?: ""
-        if (raw.isEmpty()) return emptyList()
-        return raw.split("|||").filter { it.isNotEmpty() }
-    }
+    // ════════════════════════════════════════
 
-    fun addReminder(reminder: String) {
-        val current = getReminders().toMutableList()
-        current.add(reminder)
-        prefs.edit().putString(KEY_REMINDERS, current.joinToString("|||")).apply()
-    }
+    fun getReminders(): List<String> = remindersManager.getAll()
+    fun addReminder(reminder: String) = remindersManager.add(reminder)
+    fun deleteReminder(index: Int) = remindersManager.removeAt(index)
 
-    fun deleteReminder(index: Int) {
-        val current = getReminders().toMutableList()
-        if (index in current.indices) {
-            current.removeAt(index)
-            prefs.edit().putString(KEY_REMINDERS, current.joinToString("|||")).apply()
-        }
-    }
+    // ════════════════════════════════════════
+    // HELPERS
+    // ════════════════════════════════════════
 
-    // Get a random personal reminder for intervention flow
+    /**
+     * Get a random personal reminder for intervention flow.
+     */
     fun getRandomReminder(): String? {
         val all = mutableListOf<String>()
         all.addAll(getPromises().map { "💪 Your promise: \"$it\"" })
@@ -109,7 +76,9 @@ class PromiseManager(context: Context) {
         return if (all.isNotEmpty()) all.random() else null
     }
 
-    // Check if user has any content
+    /**
+     * Check if user has any content.
+     */
     fun hasContent(): Boolean {
         return getPromises().isNotEmpty() ||
                 getWhyQuitting().isNotEmpty() ||

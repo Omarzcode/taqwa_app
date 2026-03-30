@@ -4,6 +4,7 @@ import com.taqwa.journal.data.database.CheckInEntry
 import com.taqwa.journal.data.database.JournalDao
 import com.taqwa.journal.data.database.JournalEntry
 import com.taqwa.journal.data.database.MemoryEntry
+import com.taqwa.journal.data.utilities.Validators
 import kotlinx.coroutines.flow.Flow
 
 class JournalRepository(private val journalDao: JournalDao) {
@@ -17,6 +18,7 @@ class JournalRepository(private val journalDao: JournalDao) {
     val urgesDefeatedCount: Flow<Int> = journalDao.getUrgesDefeatedCount()
 
     suspend fun insertEntry(entry: JournalEntry) {
+        validateJournalEntry(entry)
         journalDao.insertEntry(entry)
     }
 
@@ -43,6 +45,7 @@ class JournalRepository(private val journalDao: JournalDao) {
     val memoryCount: Flow<Int> = journalDao.getMemoryCount()
 
     suspend fun insertMemory(memory: MemoryEntry) {
+        validateMemoryEntry(memory)
         journalDao.insertMemory(memory)
     }
 
@@ -93,6 +96,7 @@ class JournalRepository(private val journalDao: JournalDao) {
     val recentCheckIns: Flow<List<CheckInEntry>> = journalDao.getRecentCheckIns()
 
     suspend fun insertCheckIn(checkIn: CheckInEntry) {
+        validateCheckInEntry(checkIn)
         journalDao.insertCheckIn(checkIn)
     }
 
@@ -126,5 +130,70 @@ class JournalRepository(private val journalDao: JournalDao) {
 
     suspend fun getCheckInsInRange(startMs: Long, endMs: Long): List<CheckInEntry> {
         return journalDao.getCheckInsInRange(startMs, endMs)
+    }
+
+    // ══════════════════════════════════════════
+    // VALIDATION LAYER (Using Validators utility)
+    // ══════════════════════════════════════════
+
+    /**
+     * Validate JournalEntry before saving using centralized Validators.
+     * Single source of truth prevents duplication across codebase.
+     */
+    private fun validateJournalEntry(entry: JournalEntry) {
+        // Urge strength MUST be 1-10
+        Validators.requireValidUrgeStrength(entry.urgeStrength)
+
+        // At least one question should be answered
+        val hasAnyAnswer = entry.situationContext.isNotBlank() ||
+                entry.feelings.isNotBlank() ||
+                entry.realNeed.isNotBlank() ||
+                entry.alternativeChosen.isNotBlank() ||
+                entry.freeText.isNotBlank()
+        require(hasAnyAnswer) {
+            "At least one question must be answered before saving entry"
+        }
+
+        // Free text length limit
+        Validators.requireValidFreeTextLength(entry.freeText)
+    }
+
+    /**
+     * Validate MemoryEntry before saving using centralized Validators.
+     */
+    private fun validateMemoryEntry(memory: MemoryEntry) {
+        // Type MUST be valid enum
+        Validators.requireValidMemoryType(memory.type)
+
+        // Message cannot be empty
+        Validators.requireValidMessageLength(memory.message)
+
+        // Urge strength, if provided, must be 1-10
+        if (memory.urgeStrengthAtTime > 0) {
+            Validators.requireValidUrgeStrength(memory.urgeStrengthAtTime)
+        }
+
+        // Streak cannot be negative
+        Validators.requireValidStreak(memory.streakAtTime)
+    }
+
+    /**
+     * Validate CheckInEntry before saving using centralized Validators.
+     */
+    private fun validateCheckInEntry(checkIn: CheckInEntry) {
+        // Date format validation
+        Validators.requireValidDateFormat(checkIn.date)
+
+        // Mood must be valid
+        Validators.requireValidMood(checkIn.mood)
+
+        // Risk level must be valid
+        Validators.requireValidRiskLevel(checkIn.riskLevel)
+
+        // Intention length limit
+        Validators.requireValidIntentionLength(checkIn.intention)
+
+        // Streak cannot be negative
+        Validators.requireValidStreak(checkIn.streakAtTime)
     }
 }

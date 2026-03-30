@@ -2,6 +2,7 @@ package com.taqwa.journal.data.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.taqwa.journal.data.utilities.CsvPreferenceParser
 
 /**
  * Shield Plan Manager - خطة الحماية
@@ -144,7 +145,7 @@ class ShieldPlanManager(context: Context) {
      */
     fun saveShieldPlans(plans: List<ShieldPlan>) {
         val raw = plans.joinToString(PLAN_SEP) { plan ->
-            listOf(
+            val fields = listOf(
                 plan.triggerId,
                 plan.emoji,
                 plan.triggerName,
@@ -154,7 +155,10 @@ class ShieldPlanManager(context: Context) {
                 plan.personalNote,
                 plan.isActive.toString(),
                 plan.isCustom.toString()
-            ).joinToString(FIELD_SEP)
+            )
+            // Use CsvPreferenceParser for safe serialization with quote handling
+            // This prevents data corruption if fields contain the FIELD_SEP delimiter
+            CsvPreferenceParser.serializeDelimitedLine(fields, FIELD_SEP)
         }
         prefs.edit().putString(KEY_PLANS, raw).apply()
     }
@@ -226,9 +230,12 @@ class ShieldPlanManager(context: Context) {
     }
 
     private fun parsePlan(str: String): ShieldPlan? {
-        val fields = str.split(FIELD_SEP)
-        if (fields.size < 9) return null
         return try {
+            // Use CsvPreferenceParser for safe parsing with quote handling
+            // This prevents corruption if fields contain the FIELD_SEP delimiter
+            val fields = CsvPreferenceParser.parseDelimitedLine(str, FIELD_SEP)
+            if (fields.size < 9) return null
+
             ShieldPlan(
                 triggerId = fields[0],
                 emoji = fields[1],
