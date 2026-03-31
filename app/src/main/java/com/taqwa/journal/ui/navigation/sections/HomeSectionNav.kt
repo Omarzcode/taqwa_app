@@ -43,7 +43,6 @@ fun NavGraphBuilder.homeSection(
             dailyAyah = dailyAyah,
             memoryCount = memoryCount
         )
-
         HomeScreen(
             state = homeState,
             onAction = { action ->
