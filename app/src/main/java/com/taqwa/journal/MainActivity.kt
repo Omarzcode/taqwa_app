@@ -20,14 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.taqwa.journal.data.preferences.NotificationPreferences
-import com.taqwa.journal.notification.NotificationScheduler
-import com.taqwa.journal.notification.TaqwaNotificationManager
-import com.taqwa.journal.ui.components.TaqwaBottomNavBar
-import com.taqwa.journal.ui.navigation.*
-import com.taqwa.journal.ui.screens.OnboardingScreen
-import com.taqwa.journal.ui.theme.TaqwaTheme
-import com.taqwa.journal.ui.viewmodel.JournalViewModel
+import com.taqwa.journal.features.notifications.NotificationPreferences
+import com.taqwa.journal.features.notifications.NotificationScheduler
+import com.taqwa.journal.features.notifications.TaqwaNotificationManager
+import com.taqwa.journal.core.components.TaqwaBottomNavBar
+import com.taqwa.journal.core.navigation.*
+import com.taqwa.journal.features.onboarding.screens.OnboardingScreen
+import com.taqwa.journal.core.theme.TaqwaTheme
+import com.taqwa.journal.core.viewmodel.JournalViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun scheduleNotifications() {
-        val streakManager = com.taqwa.journal.data.preferences.StreakManager(this)
+        val streakManager = com.taqwa.journal.features.streak.data.StreakManager(this)
         val currentStreak = streakManager.getCurrentStreak()
         notificationScheduler.scheduleAll(currentStreak)
         Log.d("TaqwaNotif", "All notifications scheduled. Streak: $currentStreak")
