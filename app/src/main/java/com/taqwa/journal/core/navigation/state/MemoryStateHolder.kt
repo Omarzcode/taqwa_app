@@ -4,8 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.taqwa.journal.features.memory.data.MemoryEntry
-import com.taqwa.journal.features.quran.data.DailyQuranManager.DailyAyah
-import com.taqwa.journal.features.shieldplan.data.ShieldPlanManager.ShieldPlan
+import com.taqwa.journal.features.quran.data.DailyAyah
+import com.taqwa.journal.features.shieldplan.data.ShieldPlan
 import com.taqwa.journal.core.viewmodel.JournalViewModel
 
 class MemoryStateHolder(private val viewModel: JournalViewModel) {

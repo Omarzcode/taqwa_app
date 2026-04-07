@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.features.urgeflow.data.JournalEntry
-import com.taqwa.journal.features.streak.data.StreakManager.RelapseRecord
+import com.taqwa.journal.features.streak.data.RelapseRecord
 import com.taqwa.journal.core.components.TaqwaCard
 import com.taqwa.journal.core.components.TaqwaAccentCard
 import com.taqwa.journal.core.components.TaqwaTopBar

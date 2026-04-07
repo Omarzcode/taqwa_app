@@ -3,7 +3,7 @@ package com.taqwa.journal.core.navigation.state
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.taqwa.journal.features.shieldplan.data.ShieldPlanManager.ShieldPlan
+import com.taqwa.journal.features.shieldplan.data.ShieldPlan
 import com.taqwa.journal.core.viewmodel.JournalViewModel
 
 class ShieldPlanStateHolder(private val viewModel: JournalViewModel) {

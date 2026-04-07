@@ -138,7 +138,7 @@ object CsvPreferenceParser {
     inline fun <T> serializeNested(
         items: List<T>,
         outerDelimiter: String,
-        transform: (T) -> List<String>
+        crossinline transform: (T) -> List<String>
     ): String {
         return items.joinToString(outerDelimiter) { item ->
             val fields = transform(item)

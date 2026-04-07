@@ -3,7 +3,7 @@ package com.taqwa.journal.core.navigation.state
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.taqwa.journal.features.streak.data.StreakManager.RelapseRecord
+import com.taqwa.journal.features.streak.data.RelapseRecord
 import com.taqwa.journal.core.viewmodel.JournalViewModel
 
 class StreakStateHolder(private val viewModel: JournalViewModel) {

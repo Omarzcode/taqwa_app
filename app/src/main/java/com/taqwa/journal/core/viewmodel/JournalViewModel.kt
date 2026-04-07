@@ -11,13 +11,27 @@ import com.taqwa.journal.features.urgeflow.data.JournalEntry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-
+import com.taqwa.journal.features.onboarding.OnboardingManager
+import com.taqwa.journal.features.promise.data.PromiseManager
+import com.taqwa.journal.features.shieldplan.data.ShieldPlanManager
+import com.taqwa.journal.features.quran.data.DailyQuranManager
 /**
  * Core ViewModel for Taqwa - Acts as a facade for navigation layer
  * Delegates to feature-specific ViewModels for actual business logic
  * This is a temporary solution for the modular transition
  */
 class JournalViewModel(application: Application) : AndroidViewModel(application) {
+
+    // Managers
+    private val onboardingManager = OnboardingManager(application)
+    private val promiseManager = PromiseManager(application)
+    private val streakManager2 = StreakManager(application)
+    private val shieldPlanManager = ShieldPlanManager(application)
+    private val dailyQuranManager = DailyQuranManager(application)
+
+    // Onboarding
+    private val _isOnboardingCompleted = MutableStateFlow(onboardingManager.isOnboardingCompleted())
+    val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted
 
     // Urge Flow
     val urgesDefeatedCount: StateFlow<Int> = MutableStateFlow(0)
@@ -132,8 +146,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
     fun checkTodayCheckIn() {}
     fun loadCheckInMemory() {}
-    fun saveCheckIn(mood: String, risk: Int, intention: String) {}
-
+fun saveCheckIn(mood: String, risk: String, intention: String) {}
     fun dismissMilestone() {}
 
     fun refreshNotificationSettings() {}
@@ -148,7 +161,13 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     fun deleteEntry(entry: JournalEntry) {}
     fun getEntryById(entryId: Int): Flow<JournalEntry?> = MutableStateFlow(null)
     fun clearAllData() {}
-
+fun completeOnboarding(whyQuitting: String, firstPromise: String, firstDua: String) {
+    if (whyQuitting.isNotBlank()) onboardingManager.setWhyQuitting(whyQuitting)
+    if (firstPromise.isNotBlank()) promiseManager.addPromise(firstPromise)
+    if (firstDua.isNotBlank()) promiseManager.addDua(firstDua)
+    onboardingManager.setOnboardingCompleted()
+    _isOnboardingCompleted.value = true
+}
     fun exportReport(
         startDate: String,
         endDate: String,

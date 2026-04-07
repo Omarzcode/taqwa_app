@@ -1,6 +1,8 @@
 package com.taqwa.journal.core.navigation.sections
 
-import androidx.compose.runtime.*
+import android.content.Intent
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -8,12 +10,12 @@ import com.taqwa.journal.core.navigation.Routes
 import com.taqwa.journal.core.navigation.state.NotificationStateHolder
 import com.taqwa.journal.core.navigation.state.PromiseWallStateHolder
 import com.taqwa.journal.core.navigation.state.StreakStateHolder
-import com.taqwa.journal.features.settings.screens.*
-import com.taqwa.journal.features.streak.screens.RelapseHistoryScreen
-import com.taqwa.journal.features.export.screens.ExportScreen
 import com.taqwa.journal.core.viewmodel.JournalViewModel
 import com.taqwa.journal.features.checkin.screens.MorningCheckInScreen
+import com.taqwa.journal.features.export.screens.ExportScreen
 import com.taqwa.journal.features.promise.screens.PromiseWallScreen
+import com.taqwa.journal.features.settings.screens.NotificationSettingsScreen
+import com.taqwa.journal.features.settings.screens.SettingsScreen
 
 fun NavGraphBuilder.settingsSection(
     navController: NavHostController,
@@ -92,10 +94,33 @@ fun NavGraphBuilder.settingsSection(
     composable(Routes.EXPORT) {
         ExportScreen(
             onExport = { startDate, endDate, periodLabel, options, onReady ->
-                viewModel.exportReport(startDate, endDate, periodLabel, options, onReady)
+                viewModel.exportReport(
+                    startDate.toString(),
+                    endDate.toString(),
+                    periodLabel,
+                    mapOf(
+                        "entries" to options.includeJournalEntries,
+                        "memories" to options.includeMemories,
+                        "checkIns" to options.includeCheckIns,
+                        "relapses" to options.includeRelapses,
+                        "shieldPlans" to options.includeShieldPlans
+                    )
+                ) { report -> onReady(Intent().apply { putExtra("report", report) }) }
             },
             onPreview = { startDate, endDate, periodLabel, options, onReady ->
-                viewModel.previewExport(startDate, endDate, periodLabel, options, onReady)
+                viewModel.previewExport(
+                    startDate.toString(),
+                    endDate.toString(),
+                    periodLabel,
+                    mapOf(
+                        "entries" to options.includeJournalEntries,
+                        "memories" to options.includeMemories,
+                        "checkIns" to options.includeCheckIns,
+                        "relapses" to options.includeRelapses,
+                        "shieldPlans" to options.includeShieldPlans
+                    ),
+                    onReady
+                )
             },
             onBack = { navController.popBackStack() }
         )

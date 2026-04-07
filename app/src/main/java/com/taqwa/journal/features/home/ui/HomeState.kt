@@ -1,6 +1,6 @@
 package com.taqwa.journal.features.home.ui
 
-import com.taqwa.journal.features.quran.data.DailyQuranManager.DailyAyah
+import com.taqwa.journal.features.quran.data.DailyAyah
 
 data class HomeState(
     val urgesDefeated: Int = 0,

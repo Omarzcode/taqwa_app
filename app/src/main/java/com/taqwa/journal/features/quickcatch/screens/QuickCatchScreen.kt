@@ -16,8 +16,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.taqwa.journal.features.memory.data.MemoryEntry
-import com.taqwa.journal.features.quran.data.DailyQuranManager.DailyAyah
-import com.taqwa.journal.features.shieldplan.data.ShieldPlanManager.ShieldPlan
+import com.taqwa.journal.features.quran.data.DailyAyah
+import com.taqwa.journal.features.shieldplan.data.ShieldPlan
 import com.taqwa.journal.core.components.TaqwaAccentCard
 import com.taqwa.journal.core.components.TaqwaCard
 import com.taqwa.journal.core.theme.*

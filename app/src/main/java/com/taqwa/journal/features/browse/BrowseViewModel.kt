@@ -18,7 +18,7 @@ class BrowseViewModel(
     }
 
     fun deleteEntry(entry: JournalEntry) {
-        android.content.ContextCompat
+        // TODO: implement delete
     }
 
     fun getAllFeelings(): Flow<List<String>> {

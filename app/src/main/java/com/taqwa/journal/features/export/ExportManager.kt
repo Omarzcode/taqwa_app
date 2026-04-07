@@ -6,7 +6,7 @@ import androidx.core.content.FileProvider
 import com.taqwa.journal.features.checkin.data.CheckInEntry
 import com.taqwa.journal.features.urgeflow.data.JournalEntry
 import com.taqwa.journal.features.memory.data.MemoryEntry
-import com.taqwa.journal.features.streak.data.StreakManager.RelapseRecord
+import com.taqwa.journal.features.streak.data.RelapseRecord
 import com.taqwa.journal.features.shieldplan.data.ShieldPlan
 import java.io.BufferedWriter
 import java.io.File

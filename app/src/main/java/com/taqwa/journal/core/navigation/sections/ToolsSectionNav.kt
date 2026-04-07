@@ -5,7 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.taqwa.journal.core.navigation.Routes
-import com.taqwa.journal.features.tools.ToolsAction
+import com.taqwa.journal.features.tools.screens.ToolsAction
 import com.taqwa.journal.features.tools.screens.ToolsScreen
 import com.taqwa.journal.core.viewmodel.JournalViewModel
 
