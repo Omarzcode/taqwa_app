@@ -7,9 +7,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.ImageProvider
 import androidx.glance.action.clickable
+import androidx.glance.action.actionStartActivity
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.action.actionStartActivity as appWidgetActionStartActivity
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -26,8 +29,6 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.glance.action.actionStartActivity
-import androidx.glance.appwidget.action.actionStartActivity as appWidgetActionStartActivity
 import com.taqwa.journal.MainActivity
 import com.taqwa.journal.R
 import com.taqwa.journal.data.preferences.DailyQuranManager
@@ -48,6 +49,14 @@ class TaqwaStreakWidget : GlanceAppWidget() {
         val todaysAyah = quranManager.getTodaysAyah()
         val nextMilestone = getNextMilestone(currentStreak)
 
+        val streakEmoji = when {
+            currentStreak >= 100 -> "\uD83D\uDC8E"
+            currentStreak >= 30 -> "\uD83C\uDFC6"
+            currentStreak >= 7 -> "\uD83D\uDD25"
+            currentStreak >= 1 -> "\uD83C\uDF31"
+            else -> "\uD83E\uDD32"
+        }
+
         val checkedInToday = try {
             val db = JournalDatabase.getDatabase(context)
             val today = LocalDate.now().toString()
@@ -64,6 +73,7 @@ class TaqwaStreakWidget : GlanceAppWidget() {
                 currentStreak = currentStreak,
                 longestStreak = longestStreak,
                 statusText = statusText,
+                streakEmoji = streakEmoji,
                 ayahText = todaysAyah.translation,
                 ayahRef = todaysAyah.reference,
                 nextMilestone = nextMilestone,
@@ -84,39 +94,44 @@ private fun WidgetBody(
     currentStreak: Int,
     longestStreak: Int,
     statusText: String,
+    streakEmoji: String,
     ayahText: String,
     ayahRef: String,
     nextMilestone: Int,
     checkedIn: Boolean,
     isMorning: Boolean
 ) {
-    Column(
+    Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(R.color.widget_bg)
+            .background(ImageProvider(R.drawable.widget_bg_rounded))
             .clickable(actionStartActivity<MainActivity>())
-            .padding(14.dp)
+            .padding(16.dp)
     ) {
-        // Section 1: Header
-        HeaderSection(currentStreak, statusText, nextMilestone, longestStreak)
+        Column(modifier = GlanceModifier.fillMaxSize()) {
+            // Header
+            HeaderSection(currentStreak, statusText, streakEmoji, nextMilestone, longestStreak)
 
-        // Flexible spacer pushes content apart
-        Spacer(modifier = GlanceModifier.defaultWeight())
+            Spacer(modifier = GlanceModifier.defaultWeight())
 
-        // Section 2: Check-in
-        CheckInSection(checkedIn, isMorning)
+            // Divider
+            Box(modifier = GlanceModifier.fillMaxWidth().height(1.dp).background(ImageProvider(R.drawable.widget_divider_gold))) {}
 
-        // Flexible spacer
-        Spacer(modifier = GlanceModifier.defaultWeight())
+            Spacer(modifier = GlanceModifier.defaultWeight())
 
-        // Section 3: Quran
-        QuranSection(ayahText, ayahRef)
+            // Check-in
+            CheckInSection(checkedIn, isMorning)
 
-        // Flexible spacer
-        Spacer(modifier = GlanceModifier.defaultWeight())
+            Spacer(modifier = GlanceModifier.defaultWeight())
 
-        // Section 4: Buttons
-        ButtonsSection()
+            // Quran
+            QuranSection(ayahText, ayahRef)
+
+            Spacer(modifier = GlanceModifier.defaultWeight())
+
+            // Buttons
+            ButtonsSection()
+        }
     }
 }
 
@@ -124,6 +139,7 @@ private fun WidgetBody(
 private fun HeaderSection(
     currentStreak: Int,
     statusText: String,
+    streakEmoji: String,
     nextMilestone: Int,
     longestStreak: Int
 ) {
@@ -132,40 +148,63 @@ private fun HeaderSection(
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
-            Text(
-                text = "Taqwa",
-                style = TextStyle(
-                    color = ColorProvider(R.color.widget_gold),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
+            Column {
+                Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+                    Text(
+                        text = "$streakEmoji Taqwa",
+                        style = TextStyle(
+                            color = ColorProvider(R.color.widget_gold),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+                Text(
+                    text = statusText,
+                    style = TextStyle(
+                        color = ColorProvider(R.color.widget_green),
+                        fontSize = 10.sp
+                    ),
+                    modifier = GlanceModifier.padding(top = 1.dp)
                 )
-            )
+            }
             Spacer(modifier = GlanceModifier.defaultWeight())
-            Text(
-                text = "Day $currentStreak",
-                style = TextStyle(
-                    color = ColorProvider(R.color.widget_text_white),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+            Column(horizontalAlignment = Alignment.Horizontal.End) {
+                Text(
+                    text = "$currentStreak",
+                    style = TextStyle(
+                        color = ColorProvider(R.color.widget_text_white),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.End
+                    )
                 )
-            )
+                Text(
+                    text = if (currentStreak == 1) "day" else "days",
+                    style = TextStyle(
+                        color = ColorProvider(R.color.widget_text_muted),
+                        fontSize = 10.sp,
+                        textAlign = TextAlign.End
+                    )
+                )
+            }
         }
         Row(
             modifier = GlanceModifier.fillMaxWidth().padding(top = 2.dp)
         ) {
             Text(
-                text = statusText,
+                text = "\u2192 $nextMilestone days",
                 style = TextStyle(
-                    color = ColorProvider(R.color.widget_green),
-                    fontSize = 11.sp
+                    color = ColorProvider(R.color.widget_text_muted),
+                    fontSize = 9.sp
                 )
             )
             Spacer(modifier = GlanceModifier.defaultWeight())
             Text(
-                text = "Next: $nextMilestone | Best: $longestStreak",
+                text = "Best: $longestStreak",
                 style = TextStyle(
                     color = ColorProvider(R.color.widget_text_muted),
-                    fontSize = 10.sp
+                    fontSize = 9.sp
                 )
             )
         }
@@ -177,7 +216,7 @@ private fun CheckInSection(checkedIn: Boolean, isMorning: Boolean) {
     Box(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .background(R.color.widget_card)
+            .background(ImageProvider(R.drawable.widget_checkin_bg))
             .clickable(
                 appWidgetActionStartActivity(
                     Intent("com.taqwa.journal.ACTION_CHECKIN").setClassName(
@@ -195,33 +234,25 @@ private fun CheckInSection(checkedIn: Boolean, isMorning: Boolean) {
         ) {
             if (checkedIn) {
                 Text(
-                    text = "Checked in today",
+                    text = "\u2705  Checked in today",
                     style = TextStyle(
                         color = ColorProvider(R.color.widget_green_light),
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
-                    )
-                )
-                Spacer(modifier = GlanceModifier.defaultWeight())
-                Text(
-                    text = "View",
-                    style = TextStyle(
-                        color = ColorProvider(R.color.widget_text_muted),
-                        fontSize = 11.sp
                     )
                 )
             } else {
                 Text(
-                    text = if (isMorning) "Morning Check-In" else "Daily Check-In",
+                    text = if (isMorning) "\u2600\uFE0F  Morning Check-In" else "\uD83C\uDF19  Evening Check-In",
                     style = TextStyle(
                         color = ColorProvider(R.color.widget_orange),
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )
                 )
                 Spacer(modifier = GlanceModifier.defaultWeight())
                 Text(
-                    text = "START",
+                    text = "START \u203A",
                     style = TextStyle(
                         color = ColorProvider(R.color.widget_gold),
                         fontSize = 11.sp,
@@ -237,18 +268,19 @@ private fun CheckInSection(checkedIn: Boolean, isMorning: Boolean) {
 private fun QuranSection(ayahText: String, ayahRef: String) {
     Column(modifier = GlanceModifier.fillMaxWidth()) {
         Text(
-            text = "\"$ayahText\"",
+            text = "\u201C$ayahText\u201D",
             style = TextStyle(
                 color = ColorProvider(R.color.widget_text_light),
-                fontSize = 12.sp
+                fontSize = 13.sp
             ),
             maxLines = 3
         )
         Text(
-            text = ayahRef,
+            text = "\u2014 $ayahRef",
             style = TextStyle(
                 color = ColorProvider(R.color.widget_gold),
-                fontSize = 11.sp
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium
             ),
             modifier = GlanceModifier.padding(top = 3.dp)
         )
@@ -261,7 +293,7 @@ private fun ButtonsSection() {
         Box(
             modifier = GlanceModifier
                 .defaultWeight()
-                .background(R.color.widget_primary_dark)
+                .background(ImageProvider(R.drawable.widget_btn_brown))
                 .clickable(
                     appWidgetActionStartActivity(
                         Intent("com.taqwa.journal.ACTION_SHIELD").setClassName(
@@ -275,10 +307,10 @@ private fun ButtonsSection() {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Shield Plan",
+                text = "\uD83D\uDEE1\uFE0F Shield Plan",
                 style = TextStyle(
                     color = ColorProvider(R.color.widget_text_white),
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
@@ -288,7 +320,7 @@ private fun ButtonsSection() {
         Box(
             modifier = GlanceModifier
                 .defaultWeight()
-                .background(R.color.widget_red)
+                .background(ImageProvider(R.drawable.widget_btn_red))
                 .clickable(
                     appWidgetActionStartActivity(
                         Intent("com.taqwa.journal.ACTION_URGE").setClassName(
@@ -302,10 +334,10 @@ private fun ButtonsSection() {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "Urge SOS",
+                text = "\uD83C\uDD98 Urge SOS",
                 style = TextStyle(
                     color = ColorProvider(R.color.widget_text_white),
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )

@@ -2,15 +2,13 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1A1210"
+    android:background="@drawable/widget_bg_rounded"
     android:padding="16dp">
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="Loading Taqwa..."
         android:textColor="#EEDFA8"
-        android:textSize="14sp" />
-
+        android:textSize="13sp" />
 </FrameLayout>

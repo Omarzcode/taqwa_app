@@ -6,13 +6,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.ImageProvider
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -49,50 +52,82 @@ private fun QuranWidgetContent(
     translation: String,
     reference: String
 ) {
-    Column(
+    Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(R.color.widget_bg)
+            .background(ImageProvider(R.drawable.widget_bg_quran))
             .clickable(actionStartActivity<MainActivity>())
-            .padding(14.dp),
-        verticalAlignment = Alignment.Vertical.CenterVertically,
-        horizontalAlignment = Alignment.Horizontal.CenterHorizontally
+            .padding(16.dp)
     ) {
-        Text(
-            text = arabic,
-            style = TextStyle(
-                color = ColorProvider(R.color.widget_gold),
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            ),
-            maxLines = 3,
-            modifier = GlanceModifier.fillMaxWidth()
-        )
+        Column(
+            modifier = GlanceModifier.fillMaxSize(),
+            verticalAlignment = Alignment.Vertical.CenterVertically,
+            horizontalAlignment = Alignment.Horizontal.CenterHorizontally
+        ) {
+            // Header
+            Text(
+                text = "\uD83D\uDCD6 Daily Verse",
+                style = TextStyle(
+                    color = ColorProvider(R.color.widget_text_muted),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = GlanceModifier.fillMaxWidth()
+            )
 
-        Spacer(modifier = GlanceModifier.height(8.dp))
+            Spacer(modifier = GlanceModifier.height(8.dp))
 
-        Text(
-            text = "\"$translation\"",
-            style = TextStyle(
-                color = ColorProvider(R.color.widget_text_light),
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            ),
-            maxLines = 3,
-            modifier = GlanceModifier.fillMaxWidth()
-        )
+            // Arabic
+            Text(
+                text = arabic,
+                style = TextStyle(
+                    color = ColorProvider(R.color.widget_gold),
+                    fontSize = 17.sp,
+                    textAlign = TextAlign.Center
+                ),
+                maxLines = 3,
+                modifier = GlanceModifier.fillMaxWidth()
+            )
 
-        Spacer(modifier = GlanceModifier.height(6.dp))
+            Spacer(modifier = GlanceModifier.height(8.dp))
 
-        Text(
-            text = reference,
-            style = TextStyle(
-                color = ColorProvider(R.color.widget_text_muted),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center
-            ),
-            modifier = GlanceModifier.fillMaxWidth()
-        )
+            // Gold divider
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .padding(horizontal = 40.dp)
+                    .background(ImageProvider(R.drawable.widget_divider_gold))
+            ) {}
+
+            Spacer(modifier = GlanceModifier.height(8.dp))
+
+            // Translation
+            Text(
+                text = "\u201C$translation\u201D",
+                style = TextStyle(
+                    color = ColorProvider(R.color.widget_text_light),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center
+                ),
+                maxLines = 3,
+                modifier = GlanceModifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = GlanceModifier.height(6.dp))
+
+            // Reference
+            Text(
+                text = "\u2014 $reference",
+                style = TextStyle(
+                    color = ColorProvider(R.color.widget_gold),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = GlanceModifier.fillMaxWidth()
+            )
+        }
     }
 }

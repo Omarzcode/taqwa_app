@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1A1210"
+    android:background="@drawable/widget_streak_bg"
     android:padding="8dp">
     <TextView
         android:layout_width="wrap_content"
@@ -10,6 +10,6 @@
         android:layout_gravity="center"
         android:text="..."
         android:textColor="#FFF8E7"
-        android:textSize="22sp"
+        android:textSize="24sp"
         android:textStyle="bold" />
 </FrameLayout>

@@ -1,29 +1,32 @@
 package com.taqwa.journal.widget
 
+import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.ImageProvider
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.action.actionStartActivity as appWidgetActionStartActivity
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import androidx.glance.appwidget.action.actionStartActivity as appWidgetActionStartActivity
 import com.taqwa.journal.MainActivity
 import com.taqwa.journal.R
-import android.content.Context
 
 class SosWidget : GlanceAppWidget() {
 
@@ -39,7 +42,7 @@ private fun SosWidgetContent() {
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(R.color.widget_red)
+            .background(ImageProvider(R.drawable.widget_sos_bg))
             .clickable(
                 appWidgetActionStartActivity(
                     Intent("com.taqwa.journal.ACTION_URGE").setClassName(
@@ -56,19 +59,27 @@ private fun SosWidgetContent() {
             horizontalAlignment = Alignment.Horizontal.CenterHorizontally
         ) {
             Text(
-                text = "SOS",
+                text = "\uD83C\uDD98",
+                style = TextStyle(
+                    fontSize = 28.sp,
+                    textAlign = TextAlign.Center
+                )
+            )
+            Spacer(modifier = GlanceModifier.height(2.dp))
+            Text(
+                text = "HELP",
                 style = TextStyle(
                     color = ColorProvider(R.color.widget_text_white),
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
             )
             Text(
-                text = "Urge Help",
+                text = "Tap now",
                 style = TextStyle(
                     color = ColorProvider(R.color.widget_text_light),
-                    fontSize = 11.sp,
+                    fontSize = 9.sp,
                     textAlign = TextAlign.Center
                 )
             )
