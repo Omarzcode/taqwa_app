@@ -21,6 +21,7 @@ fun NavGraphBuilder.homeSection(
         val streakStatus by viewModel.streakStatus.collectAsState()
         val milestoneMessage by viewModel.milestoneMessage.collectAsState()
         val todayCheckInDone by viewModel.todayCheckInDone.collectAsState()
+        val checkInLoaded by viewModel.checkInLoaded.collectAsState()
         val totalRelapses by viewModel.totalRelapses.collectAsState()
         val dailyAyah by viewModel.dailyAyah.collectAsState()
         val memoryCount by viewModel.memoryCount.collectAsState(initial = 0)
@@ -39,6 +40,7 @@ fun NavGraphBuilder.homeSection(
             streakStatus = streakStatus,
             milestoneMessage = milestoneMessage,
             todayCheckInDone = todayCheckInDone,
+            checkInLoaded = checkInLoaded,
             totalRelapses = totalRelapses,
             dailyAyah = dailyAyah,
             memoryCount = memoryCount

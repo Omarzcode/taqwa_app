@@ -1,4 +1,4 @@
-plugins {
+﻿plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -65,6 +65,10 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Glance Widgets
+    implementation(libs.androidx.glance)
+    implementation(libs.androidx.glance.material3)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

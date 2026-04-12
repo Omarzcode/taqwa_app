@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,6 +38,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var notificationPreferences: NotificationPreferences
     private lateinit var notificationScheduler: NotificationScheduler
 
+    companion object {
+        const val EXTRA_NAVIGATE_TO = "navigate_to"
+    }
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -47,19 +55,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialize notification system
         notificationPreferences = NotificationPreferences(this)
         notificationScheduler = NotificationScheduler(this)
 
-        // Create channels FIRST — must happen before any notification
         val taqwaNotificationManager = TaqwaNotificationManager(this)
         taqwaNotificationManager.createNotificationChannels()
         Log.d("TaqwaNotif", "Notification channels created")
 
-        // Update last app open time
         notificationPreferences.updateLastAppOpen()
 
-        // Request permission then schedule
         if (hasNotificationPermission()) {
             Log.d("TaqwaNotif", "Permission already granted, scheduling notifications")
             scheduleNotifications()
@@ -67,6 +71,10 @@ class MainActivity : ComponentActivity() {
             Log.d("TaqwaNotif", "Requesting notification permission")
             requestNotificationPermission()
         }
+
+        // Read and consume the deep link extra
+        val navigateTo = intent?.getStringExtra(EXTRA_NAVIGATE_TO)
+        intent?.removeExtra(EXTRA_NAVIGATE_TO)
 
         setContent {
             TaqwaTheme {
@@ -77,6 +85,34 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val showBottomNav = shouldShowBottomNav(navController)
                     val route = currentRoute(navController)
+
+                    // Track if deep link was already consumed
+                    var deepLinkConsumed by remember { mutableStateOf(false) }
+
+                    LaunchedEffect(Unit) {
+                        if (navigateTo != null && !deepLinkConsumed) {
+                            deepLinkConsumed = true
+                            when (navigateTo) {
+                                Routes.MORNING_CHECK_IN -> {
+                                    viewModel.loadCheckInMemory()
+                                    navController.navigate(Routes.MORNING_CHECK_IN) {
+                                        popUpTo(Routes.HOME)
+                                    }
+                                }
+                                Routes.SHIELD_PLANS -> {
+                                    navController.navigate(Routes.SHIELD_PLANS) {
+                                        popUpTo(Routes.HOME)
+                                    }
+                                }
+                                Routes.BREATHING -> {
+                                    viewModel.resetCurrentEntry()
+                                    navController.navigate(Routes.BREATHING) {
+                                        popUpTo(Routes.HOME)
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
@@ -120,6 +156,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
     override fun onResume() {
         super.onResume()
         if (::notificationPreferences.isInitialized) {
@@ -134,7 +175,6 @@ class MainActivity : ComponentActivity() {
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
         } else {
-            // Below Android 13, no runtime permission needed
             true
         }
     }

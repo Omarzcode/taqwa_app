@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_bg">#FF1A1210</color>
+    <color name="widget_card">#FF2B1C12</color>
+    <color name="widget_card_light">#FF362416</color>
+    <color name="widget_gold">#FFEEDFA8</color>
+    <color name="widget_text_white">#FFFFF8E7</color>
+    <color name="widget_text_light">#FFD4C4A8</color>
+    <color name="widget_text_muted">#FF9E8E78</color>
+    <color name="widget_green">#FF5A7D4A</color>
+    <color name="widget_green_light">#FF6B9B56</color>
+    <color name="widget_divider">#FF3D2B1C</color>
+    <color name="widget_red">#FF8B3A3A</color>
+    <color name="widget_red_light">#FFC94444</color>
+    <color name="widget_orange">#FFCC8844</color>
+    <color name="widget_primary">#FF6D563E</color>
+    <color name="widget_primary_dark">#FF544131</color>
+    <color name="widget_progress_bg">#FF3D2B1C</color>
+    <color name="widget_progress_fill">#FFEEDFA8</color>
+</resources>

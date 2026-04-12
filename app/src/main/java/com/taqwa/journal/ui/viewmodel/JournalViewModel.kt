@@ -21,6 +21,7 @@ import com.taqwa.journal.data.preferences.ShieldPlan
 import com.taqwa.journal.data.preferences.ShieldPlanManager
 import com.taqwa.journal.data.preferences.StreakManager
 import com.taqwa.journal.data.repository.JournalRepository
+import com.taqwa.journal.widget.WidgetUpdater
 import com.taqwa.journal.data.utilities.Validators
 import com.taqwa.journal.notification.NotificationScheduler
 import kotlinx.coroutines.flow.Flow
@@ -136,6 +137,9 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
     private val _todayCheckInDone = MutableStateFlow(false)
     val todayCheckInDone: StateFlow<Boolean> = _todayCheckInDone.asStateFlow()
+
+    private val _checkInLoaded = MutableStateFlow(false)
+    val checkInLoaded: StateFlow<Boolean> = _checkInLoaded.asStateFlow()
 
     private val _checkInMemory = MutableStateFlow<MemoryEntry?>(null)
     val checkInMemory: StateFlow<MemoryEntry?> = _checkInMemory.asStateFlow()
@@ -560,6 +564,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
             val today = java.time.LocalDate.now().toString()
             val existing = repository.getCheckInForDate(today)
             _todayCheckInDone.value = existing != null
+            _checkInLoaded.value = true
         }
     }
 

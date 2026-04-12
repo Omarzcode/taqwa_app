@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Taqwa</string>
+    <string name="widget_description">Streak, check-in, verse, and quick actions</string>
+    <string name="widget_sos_description">Emergency urge help button</string>
+    <string name="widget_quran_description">Daily Quran verse</string>
+    <string name="widget_streak_description">Current streak counter</string>
 </resources>

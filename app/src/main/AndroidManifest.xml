@@ -2,13 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Notification permission (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- Exact alarm permission (Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-
-    <!-- Receive boot completed to reschedule alarms -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
@@ -33,7 +28,6 @@
             </intent-filter>
         </activity>
 
-        <!-- FileProvider for export feature -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -44,18 +38,68 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Notification Receiver — fires when alarm triggers -->
         <receiver
             android:name=".notification.NotificationReceiver"
             android:exported="false" />
 
-        <!-- Boot Receiver — reschedules alarms after device reboot -->
         <receiver
             android:name=".notification.BootReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
+        </receiver>
+
+        <!-- Main Taqwa Widget -->
+        <receiver
+            android:name=".widget.TaqwaWidgetReceiver"
+            android:exported="true"
+            android:label="Taqwa Dashboard">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/taqwa_widget_info" />
+        </receiver>
+
+        <!-- SOS Widget -->
+        <receiver
+            android:name=".widget.SosWidgetReceiver"
+            android:exported="true"
+            android:label="Taqwa SOS">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sos_widget_info" />
+        </receiver>
+
+        <!-- Quran Widget -->
+        <receiver
+            android:name=".widget.QuranWidgetReceiver"
+            android:exported="true"
+            android:label="Taqwa Quran">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quran_widget_info" />
+        </receiver>
+
+        <!-- Streak Mini Widget -->
+        <receiver
+            android:name=".widget.StreakMiniWidgetReceiver"
+            android:exported="true"
+            android:label="Taqwa Streak">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/streak_mini_widget_info" />
         </receiver>
 
     </application>
