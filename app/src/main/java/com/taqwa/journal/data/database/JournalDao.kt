@@ -128,6 +128,9 @@ interface JournalDao {
     // ✅ CORRECT — use the @ColumnInfo name "risk_level"
     @Query("SELECT * FROM checkin_entries WHERE risk_level = :riskLevel ORDER BY timestamp DESC")
     fun getCheckInsByRisk(riskLevel: String): Flow<List<CheckInEntry>>
+    // Update an existing check-in
+    @Update
+    suspend fun updateCheckIn(checkIn: CheckInEntry)
     // Delete a check-in
     @Delete
     suspend fun deleteCheckIn(checkIn: CheckInEntry)

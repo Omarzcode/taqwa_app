@@ -107,7 +107,14 @@ class JournalRepository(private val journalDao: JournalDao) {
     suspend fun deleteCheckIn(checkIn: CheckInEntry) {
         journalDao.deleteCheckIn(checkIn)
     }
+    suspend fun updateCheckIn(checkIn: CheckInEntry) {
+        journalDao.updateCheckIn(checkIn)
+    }
 
+    suspend fun getYesterdayCheckIn(): CheckInEntry? {
+        val yesterday = java.time.LocalDate.now().minusDays(1).toString()
+        return journalDao.getCheckInForDate(yesterday)
+    }
     fun getCheckInsByMood(mood: String): Flow<List<CheckInEntry>> {
         return journalDao.getCheckInsByMood(mood)
     }

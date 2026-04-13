@@ -144,6 +144,12 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val _checkInMemory = MutableStateFlow<MemoryEntry?>(null)
     val checkInMemory: StateFlow<MemoryEntry?> = _checkInMemory.asStateFlow()
 
+    private val _yesterdayCheckIn = MutableStateFlow<CheckInEntry?>(null)
+    val yesterdayCheckIn: StateFlow<CheckInEntry?> = _yesterdayCheckIn.asStateFlow()
+
+    private val _todayCheckIn = MutableStateFlow<CheckInEntry?>(null)
+    val todayCheckIn: StateFlow<CheckInEntry?> = _todayCheckIn.asStateFlow()
+
     val allCheckIns: Flow<List<CheckInEntry>> = MutableStateFlow<List<CheckInEntry>>(emptyList())
     val checkInCount: Flow<Int> = MutableStateFlow(0)
 
@@ -574,26 +580,48 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 repository.getRandomPinnedMemory()
                     ?: repository.getRandomRelapseLetter()
                             ?: repository.getRandomMemory()
+            _yesterdayCheckIn.value = repository.getYesterdayCheckIn()
+            val today = java.time.LocalDate.now().toString()
+            _todayCheckIn.value = repository.getCheckInForDate(today)
         }
     }
 
-    fun saveCheckIn(mood: String, riskLevel: String, intention: String) {
+    fun saveCheckIn(
+        mood: String,
+        riskLevel: String,
+        intention: String,
+        sleepQuality: String = "",
+        gratitude: String = "",
+        yesterdayFollowed: Boolean = false
+    ) {
         viewModelScope.launch {
             try {
-                // Validate using centralized validators
                 Validators.requireValidMood(mood)
                 Validators.requireValidRiskLevel(riskLevel)
                 Validators.requireValidIntentionLength(intention)
+                if (sleepQuality.isNotEmpty()) Validators.requireValidSleepQuality(sleepQuality)
+                if (gratitude.isNotEmpty()) Validators.requireValidGratitudeLength(gratitude)
 
                 val today = java.time.LocalDate.now().toString()
+                val hour = java.time.LocalTime.now().hour
+                val isMorning = hour in 4..11
+
                 val checkIn = CheckInEntry(
                     date = today,
                     mood = mood,
                     riskLevel = riskLevel,
                     intention = intention,
-                    streakAtTime = _currentStreak.value
+                    streakAtTime = _currentStreak.value,
+                    sleepQuality = sleepQuality,
+                    gratitude = gratitude,
+                    yesterdayFollowed = yesterdayFollowed,
+                    isMorning = isMorning
                 )
                 repository.insertCheckIn(checkIn)
+                _todayCheckInDone.value = true
+                _todayCheckIn.value = checkIn
+                WidgetUpdater.updateAllWidgets(getApplication())
+            } catch (e: android.database.sqlite.SQLiteConstraintException) {
                 _todayCheckInDone.value = true
             } catch (e: IllegalArgumentException) {
                 e.printStackTrace()

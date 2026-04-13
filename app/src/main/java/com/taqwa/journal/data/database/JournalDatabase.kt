@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [JournalEntry::class, MemoryEntry::class, CheckInEntry::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class JournalDatabase : RoomDatabase() {
@@ -119,6 +119,15 @@ abstract class JournalDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE checkin_entries ADD COLUMN sleep_quality TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE checkin_entries ADD COLUMN gratitude TEXT NOT NULL DEFAULT ''")
+                    db.execSQL("ALTER TABLE checkin_entries ADD COLUMN yesterday_followed INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE checkin_entries ADD COLUMN is_morning INTEGER NOT NULL DEFAULT 1")
+                }
+            }
+
         fun getDatabase(context: Context): JournalDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -132,7 +141,7 @@ abstract class JournalDatabase : RoomDatabase() {
                         MIGRATION_1_3,
                         MIGRATION_3_4
                     )
-                    .fallbackToDestructiveMigration()
+                    .addMigrations(MIGRATION_4_5)
                     .build()
                 INSTANCE = instance
                 instance

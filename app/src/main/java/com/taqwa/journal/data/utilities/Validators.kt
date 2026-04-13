@@ -167,7 +167,31 @@ object Validators {
             "Invalid minute $minute. Must be between $MINUTE_MIN and $MINUTE_MAX"
         }
     }
+    // ════════════════════════════════════════
+    // SLEEP QUALITY VALIDATION
+    // ════════════════════════════════════════
 
+    fun isValidSleepQuality(sleep: String): Boolean {
+        return sleep in listOf(CheckInEntry.SLEEP_GOOD, CheckInEntry.SLEEP_OKAY, CheckInEntry.SLEEP_BAD)
+    }
+
+    fun requireValidSleepQuality(sleep: String) {
+        require(isValidSleepQuality(sleep)) {
+            "Invalid sleep quality. Must be GOOD, OKAY, or BAD"
+        }
+    }
+
+    // ════════════════════════════════════════
+    // GRATITUDE VALIDATION
+    // ════════════════════════════════════════
+
+    const val MAX_GRATITUDE_LENGTH = 500
+
+    fun requireValidGratitudeLength(gratitude: String) {
+        require(gratitude.length <= MAX_GRATITUDE_LENGTH) {
+            "Gratitude exceeds maximum length"
+        }
+    }
     // ════════════════════════════════════════
     // STREAK VALIDATION
     // ════════════════════════════════════════

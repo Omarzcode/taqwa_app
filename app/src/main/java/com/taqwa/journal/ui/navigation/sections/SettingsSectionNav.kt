@@ -101,6 +101,9 @@ fun NavGraphBuilder.settingsSection(
         val checkInMemory by viewModel.checkInMemory.collectAsState()
         val currentStreak by viewModel.currentStreak.collectAsState()
         val dailyAyah by viewModel.dailyAyah.collectAsState()
+        val yesterdayCheckIn by viewModel.yesterdayCheckIn.collectAsState()
+        val todayCheckIn by viewModel.todayCheckIn.collectAsState()
+        val todayCheckInDone by viewModel.todayCheckInDone.collectAsState()
 
         LaunchedEffect(Unit) {
             viewModel.loadCheckInMemory()
@@ -111,11 +114,11 @@ fun NavGraphBuilder.settingsSection(
             currentStreak = currentStreak,
             dailyAyah = dailyAyah,
             memoryBankEntry = checkInMemory,
-            onComplete = { mood, risk, intention ->
-                viewModel.saveCheckIn(mood, risk, intention)
-                navController.navigate(Routes.HOME) {
-                    popUpTo(Routes.HOME) { inclusive = true }
-                }
+            yesterdayCheckIn = yesterdayCheckIn,
+            todayCheckIn = todayCheckIn,
+            alreadyCheckedIn = todayCheckInDone,
+            onComplete = { mood, risk, intention, sleep, gratitude, yesterdayFollowed ->
+                viewModel.saveCheckIn(mood, risk, intention, sleep, gratitude, yesterdayFollowed)
             },
             onBack = { navController.popBackStack() }
         )
