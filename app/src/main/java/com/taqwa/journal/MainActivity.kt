@@ -32,6 +32,7 @@ import com.taqwa.journal.ui.navigation.*
 import com.taqwa.journal.ui.screens.OnboardingScreen
 import com.taqwa.journal.ui.theme.TaqwaTheme
 import com.taqwa.journal.ui.viewmodel.JournalViewModel
+import com.taqwa.journal.widget.WidgetUpdater
 
 class MainActivity : ComponentActivity() {
 
@@ -71,6 +72,11 @@ class MainActivity : ComponentActivity() {
             Log.d("TaqwaNotif", "Requesting notification permission")
             requestNotificationPermission()
         }
+
+        // Refresh all widgets on every app open
+        WidgetUpdater.updateAllWidgets(this)
+        // Ensure midnight refresh is always scheduled
+        WidgetUpdater.scheduleMidnightRefresh(this)
 
         // Read and consume the deep link extra
         val navigateTo = intent?.getStringExtra(EXTRA_NAVIGATE_TO)
@@ -166,6 +172,8 @@ class MainActivity : ComponentActivity() {
         if (::notificationPreferences.isInitialized) {
             notificationPreferences.updateLastAppOpen()
         }
+        // Refresh widgets whenever user returns to app
+        WidgetUpdater.updateAllWidgets(this)
     }
 
     private fun hasNotificationPermission(): Boolean {

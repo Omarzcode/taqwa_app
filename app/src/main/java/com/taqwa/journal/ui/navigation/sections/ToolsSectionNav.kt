@@ -38,6 +38,7 @@ fun NavGraphBuilder.toolsSection(
                     ToolsAction.OpenPatternAnalysis -> navController.navigate(Routes.PATTERN_ANALYSIS)
                     ToolsAction.OpenRelapseHistory -> navController.navigate(Routes.RELAPSE_HISTORY)
                     ToolsAction.OpenResetStreak -> navController.navigate(Routes.RESET_STREAK)
+                    ToolsAction.OpenKnowledge -> navController.navigate(Routes.KNOWLEDGE_CATEGORIES)
                 }
             }
         )

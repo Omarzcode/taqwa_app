@@ -50,6 +50,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- Midnight widget refresh receiver -->
+        <receiver
+            android:name=".widget.WidgetRefreshReceiver"
+            android:exported="false" />
+
         <!-- Main Taqwa Widget -->
         <receiver
             android:name=".widget.TaqwaWidgetReceiver"

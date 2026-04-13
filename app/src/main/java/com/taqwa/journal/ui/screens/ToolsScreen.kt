@@ -30,6 +30,7 @@ sealed interface ToolsAction {
     data object OpenPatternAnalysis : ToolsAction
     data object OpenRelapseHistory : ToolsAction
     data object OpenResetStreak : ToolsAction
+    data object OpenKnowledge : ToolsAction
 }
 
 @Composable
@@ -43,7 +44,7 @@ fun ToolsScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        TaqwaTopBar(title = "🧰  My Tools")
+        TaqwaTopBar(title = "\uD83E\uDDF0  My Tools")
 
         Column(
             modifier = Modifier
@@ -53,9 +54,9 @@ fun ToolsScreen(
         ) {
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
-            // ── Defense Tools ──
+            // -- Defense Tools --
             SectionHeader(
-                emoji = "🛡️",
+                emoji = "\uD83D\uDEE1\uFE0F",
                 title = "Defense Tools",
                 subtitle = "Your weapons against urges"
             )
@@ -63,21 +64,21 @@ fun ToolsScreen(
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
             ToolItem(
-                emoji = "🛡️",
+                emoji = "\uD83D\uDEE1\uFE0F",
                 title = "Shield Plans",
                 subtitle = "Pre-written defense strategies for each trigger",
                 onClick = { onAction(ToolsAction.OpenShieldPlans) }
             )
 
             ToolItem(
-                emoji = "🧠",
+                emoji = "\uD83E\uDDE0",
                 title = "Memory Bank",
                 subtitle = if (memoryCount > 0) "$memoryCount memories saved" else "Save moments of clarity and pain",
                 onClick = { onAction(ToolsAction.OpenMemoryBank) }
             )
 
             ToolItem(
-                emoji = "💪",
+                emoji = "\uD83D\uDCAA",
                 title = "Promise Wall",
                 subtitle = "Your promises, duas, and reasons to quit",
                 onClick = { onAction(ToolsAction.OpenPromiseWall) }
@@ -85,9 +86,28 @@ fun ToolsScreen(
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-            // ── Daily Ritual ──
+            // -- Knowledge --
             SectionHeader(
-                emoji = "☀️",
+                emoji = "\uD83D\uDCDA",
+                title = "Knowledge",
+                subtitle = "Understand your enemy to defeat it"
+            )
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+
+            ToolItem(
+                emoji = "\uD83D\uDCDA",
+                title = "Knowledge Hub",
+                subtitle = "Islamic & scientific insights on addiction and recovery",
+                onClick = { onAction(ToolsAction.OpenKnowledge) },
+                accentColor = VanillaCustard
+            )
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+            // -- Daily Ritual --
+            SectionHeader(
+                emoji = "\u2600\uFE0F",
                 title = "Daily Ritual",
                 subtitle = "Build your daily shield"
             )
@@ -95,18 +115,18 @@ fun ToolsScreen(
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
             ToolItem(
-                emoji = "☀️",
+                emoji = "\u2600\uFE0F",
                 title = "Morning Check-In",
-                subtitle = if (todayCheckInDone) "✓ Completed today" else "Start your day with awareness",
+                subtitle = if (todayCheckInDone) "\u2713 Completed today" else "Start your day with awareness",
                 onClick = { onAction(ToolsAction.OpenMorningCheckIn) },
                 accentColor = if (!todayCheckInDone) AccentOrangeLight else null
             )
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-            // ── Browse & Track ──
+            // -- Browse & Track --
             SectionHeader(
-                emoji = "📊",
+                emoji = "\uD83D\uDCCA",
                 title = "Browse & Track",
                 subtitle = "Your journey data"
             )
@@ -114,28 +134,28 @@ fun ToolsScreen(
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
             ToolItem(
-                emoji = "📖",
+                emoji = "\uD83D\uDCD6",
                 title = "Journal Entries",
                 subtitle = "Browse your past reflections",
                 onClick = { onAction(ToolsAction.OpenPastEntries) }
             )
 
             ToolItem(
-                emoji = "📅",
+                emoji = "\uD83D\uDCC5",
                 title = "Calendar",
                 subtitle = "See your journey on a calendar",
                 onClick = { onAction(ToolsAction.OpenCalendar) }
             )
 
             ToolItem(
-                emoji = "📊",
+                emoji = "\uD83D\uDCCA",
                 title = "Pattern Analysis",
                 subtitle = "Discover your triggers and trends",
                 onClick = { onAction(ToolsAction.OpenPatternAnalysis) }
             )
 
             ToolItem(
-                emoji = "📉",
+                emoji = "\uD83D\uDCC9",
                 title = "Relapse History",
                 subtitle = "Review past struggles to learn",
                 onClick = { onAction(ToolsAction.OpenRelapseHistory) }
@@ -143,7 +163,7 @@ fun ToolsScreen(
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
 
-            // ── Relapse Section (subtle, at the very bottom) ──
+            // -- Relapse Section (subtle, at the very bottom) --
             HorizontalDivider(
                 color = DividerColor,
                 thickness = TaqwaDimens.dividerThickness
@@ -228,7 +248,7 @@ private fun ToolItem(
         }
 
         Text(
-            text = "›",
+            text = "\u203A",
             style = TaqwaType.cardTitle,
             color = TextMuted
         )

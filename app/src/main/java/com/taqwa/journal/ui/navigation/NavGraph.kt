@@ -42,13 +42,13 @@ fun FlowBackHandler(navController: NavHostController) {
     if (showQuitDialog) {
         AlertDialog(
             onDismissRequest = { showQuitDialog = false },
-            title = { Text("⚠️ Don't Give Up!", fontWeight = FontWeight.Bold) },
+            title = { Text("\u26A0\uFE0F Don't Give Up!", fontWeight = FontWeight.Bold) },
             text = {
                 Text("You're in the middle of fighting an urge.\n\nThe urge WANTS you to close this app.\nDon't let it win.\n\nStay strong. Keep going.")
             },
             confirmButton = {
                 TextButton(onClick = { showQuitDialog = false }) {
-                    Text("💪 Keep Going", color = VanillaCustard)
+                    Text("\uD83D\uDCAA Keep Going", color = VanillaCustard)
                 }
             },
             dismissButton = {
@@ -80,5 +80,6 @@ fun TaqwaNavGraph(
         shieldPlanSection(navController, viewModel)
         settingsSection(navController, viewModel)
         browseSection(navController, viewModel)
+        knowledgeSection(navController, viewModel)
     }
 }
