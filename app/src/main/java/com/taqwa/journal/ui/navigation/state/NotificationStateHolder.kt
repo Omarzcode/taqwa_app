@@ -12,6 +12,9 @@ class NotificationStateHolder(private val viewModel: JournalViewModel) {
         val morningEnabled by viewModel.morningEnabled.collectAsState()
         val morningHour by viewModel.morningHour.collectAsState()
         val morningMinute by viewModel.morningMinute.collectAsState()
+        val eveningEnabled by viewModel.eveningEnabled.collectAsState()
+        val eveningHour by viewModel.eveningHour.collectAsState()
+        val eveningMinute by viewModel.eveningMinute.collectAsState()
         val dangerHourEnabled by viewModel.dangerHourEnabled.collectAsState()
         val dangerHourDetected by viewModel.dangerHourDetected.collectAsState()
         val dangerHourStart by viewModel.dangerHourStart.collectAsState()
@@ -22,11 +25,15 @@ class NotificationStateHolder(private val viewModel: JournalViewModel) {
         val inactivityEnabled by viewModel.inactivityEnabled.collectAsState()
         val streakCelebrationEnabled by viewModel.streakCelebrationEnabled.collectAsState()
         val postRelapseEnabled by viewModel.postRelapseEnabled.collectAsState()
+        val fridayEnabled by viewModel.fridayEnabled.collectAsState()
 
         return NotificationScreenState(
             morningEnabled = morningEnabled,
             morningHour = morningHour,
             morningMinute = morningMinute,
+            eveningEnabled = eveningEnabled,
+            eveningHour = eveningHour,
+            eveningMinute = eveningMinute,
             dangerHourEnabled = dangerHourEnabled,
             dangerHourDetected = dangerHourDetected,
             dangerHourStart = dangerHourStart,
@@ -36,24 +43,31 @@ class NotificationStateHolder(private val viewModel: JournalViewModel) {
             memoryResurfaceEnabled = memoryResurfaceEnabled,
             inactivityEnabled = inactivityEnabled,
             streakCelebrationEnabled = streakCelebrationEnabled,
-            postRelapseEnabled = postRelapseEnabled
+            postRelapseEnabled = postRelapseEnabled,
+            fridayEnabled = fridayEnabled
         )
     }
 
     fun refreshSettings() = viewModel.refreshNotificationSettings()
     fun setMorningEnabled(enabled: Boolean) = viewModel.setMorningReminderEnabled(enabled)
     fun setMorningTime(hour: Int, minute: Int) = viewModel.setMorningTime(hour, minute)
+    fun setEveningEnabled(enabled: Boolean) = viewModel.setEveningReminderEnabled(enabled)
+    fun setEveningTime(hour: Int, minute: Int) = viewModel.setEveningTime(hour, minute)
     fun setDangerHourEnabled(enabled: Boolean) = viewModel.setDangerHourEnabled(enabled)
     fun setMemoryResurfaceEnabled(enabled: Boolean) = viewModel.setMemoryResurfaceEnabled(enabled)
     fun setInactivityEnabled(enabled: Boolean) = viewModel.setInactivityCheckEnabled(enabled)
     fun setStreakCelebrationEnabled(enabled: Boolean) = viewModel.setStreakCelebrationEnabled(enabled)
     fun setPostRelapseEnabled(enabled: Boolean) = viewModel.setPostRelapseEnabled(enabled)
+    fun setFridayEnabled(enabled: Boolean) = viewModel.setFridayReminderEnabled(enabled)
 }
 
 data class NotificationScreenState(
     val morningEnabled: Boolean,
     val morningHour: Int,
     val morningMinute: Int,
+    val eveningEnabled: Boolean,
+    val eveningHour: Int,
+    val eveningMinute: Int,
     val dangerHourEnabled: Boolean,
     val dangerHourDetected: Boolean,
     val dangerHourStart: Int,
@@ -63,5 +77,6 @@ data class NotificationScreenState(
     val memoryResurfaceEnabled: Boolean,
     val inactivityEnabled: Boolean,
     val streakCelebrationEnabled: Boolean,
-    val postRelapseEnabled: Boolean
+    val postRelapseEnabled: Boolean,
+    val fridayEnabled: Boolean
 )

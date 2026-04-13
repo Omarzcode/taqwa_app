@@ -10,6 +10,8 @@ data class HomeState(
     val milestoneMessage: String? = null,
     val todayCheckInDone: Boolean = false,
     val checkInLoaded: Boolean = false,
+    val todayEveningCheckInDone: Boolean = false,
+    val eveningCheckInLoaded: Boolean = false,
     val totalRelapses: Int = 0,
     val dailyAyah: DailyAyah? = null,
     val memoryCount: Int = 0
@@ -34,5 +36,14 @@ data class HomeState(
         get() = milestoneMessage != null
 
     val showMorningCheckIn: Boolean
-        get() = checkInLoaded && !todayCheckInDone
+        get() {
+            val hour = java.time.LocalTime.now().hour
+            return checkInLoaded && !todayCheckInDone && hour < 17
+        }
+
+    val showEveningCheckIn: Boolean
+        get() {
+            val hour = java.time.LocalTime.now().hour
+            return eveningCheckInLoaded && !todayEveningCheckInDone && hour >= 17
+        }
 }

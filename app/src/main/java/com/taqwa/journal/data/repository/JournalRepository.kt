@@ -1,6 +1,7 @@
 package com.taqwa.journal.data.repository
 
 import com.taqwa.journal.data.database.CheckInEntry
+import com.taqwa.journal.data.database.EveningCheckInEntry
 import com.taqwa.journal.data.database.JournalDao
 import com.taqwa.journal.data.database.JournalEntry
 import com.taqwa.journal.data.database.MemoryEntry
@@ -31,7 +32,7 @@ class JournalRepository(private val journalDao: JournalDao) {
     }
 
     // ══════════════════════════════════════════
-    // MEMORY BANK - بنك الذاكرة
+    // MEMORY BANK
     // ══════════════════════════════════════════
 
     val allMemories: Flow<List<MemoryEntry>> = journalDao.getAllMemories()
@@ -86,7 +87,7 @@ class JournalRepository(private val journalDao: JournalDao) {
     }
 
     // ══════════════════════════════════════════
-    // MORNING CHECK-IN - الورد الصباحي
+    // MORNING CHECK-IN
     // ══════════════════════════════════════════
 
     val allCheckIns: Flow<List<CheckInEntry>> = journalDao.getAllCheckIns()
@@ -107,6 +108,7 @@ class JournalRepository(private val journalDao: JournalDao) {
     suspend fun deleteCheckIn(checkIn: CheckInEntry) {
         journalDao.deleteCheckIn(checkIn)
     }
+
     suspend fun updateCheckIn(checkIn: CheckInEntry) {
         journalDao.updateCheckIn(checkIn)
     }
@@ -115,12 +117,45 @@ class JournalRepository(private val journalDao: JournalDao) {
         val yesterday = java.time.LocalDate.now().minusDays(1).toString()
         return journalDao.getCheckInForDate(yesterday)
     }
+
     fun getCheckInsByMood(mood: String): Flow<List<CheckInEntry>> {
         return journalDao.getCheckInsByMood(mood)
     }
 
     fun getCheckInsByRisk(riskLevel: String): Flow<List<CheckInEntry>> {
         return journalDao.getCheckInsByRisk(riskLevel)
+    }
+
+    // ══════════════════════════════════════════
+    // EVENING CHECK-IN
+    // ══════════════════════════════════════════
+
+    val allEveningCheckIns: Flow<List<EveningCheckInEntry>> = journalDao.getAllEveningCheckIns()
+
+    val eveningCheckInCount: Flow<Int> = journalDao.getEveningCheckInCount()
+
+    val recentEveningCheckIns: Flow<List<EveningCheckInEntry>> = journalDao.getRecentEveningCheckIns()
+
+    suspend fun insertEveningCheckIn(entry: EveningCheckInEntry) {
+        validateEveningCheckInEntry(entry)
+        journalDao.insertEveningCheckIn(entry)
+    }
+
+    suspend fun getEveningCheckInForDate(date: String): EveningCheckInEntry? {
+        return journalDao.getEveningCheckInForDate(date)
+    }
+
+    suspend fun updateEveningCheckIn(entry: EveningCheckInEntry) {
+        journalDao.updateEveningCheckIn(entry)
+    }
+
+    suspend fun deleteEveningCheckIn(entry: EveningCheckInEntry) {
+        journalDao.deleteEveningCheckIn(entry)
+    }
+
+    suspend fun getTodayMorningCheckIn(): CheckInEntry? {
+        val today = java.time.LocalDate.now().toString()
+        return journalDao.getCheckInForDate(today)
     }
 
     // ══════════════════════════════════════════
@@ -139,19 +174,17 @@ class JournalRepository(private val journalDao: JournalDao) {
         return journalDao.getCheckInsInRange(startMs, endMs)
     }
 
+    suspend fun getEveningCheckInsInRange(startMs: Long, endMs: Long): List<EveningCheckInEntry> {
+        return journalDao.getEveningCheckInsInRange(startMs, endMs)
+    }
+
     // ══════════════════════════════════════════
-    // VALIDATION LAYER (Using Validators utility)
+    // VALIDATION LAYER
     // ══════════════════════════════════════════
 
-    /**
-     * Validate JournalEntry before saving using centralized Validators.
-     * Single source of truth prevents duplication across codebase.
-     */
     private fun validateJournalEntry(entry: JournalEntry) {
-        // Urge strength MUST be 1-10
         Validators.requireValidUrgeStrength(entry.urgeStrength)
 
-        // At least one question should be answered
         val hasAnyAnswer = entry.situationContext.isNotBlank() ||
                 entry.feelings.isNotBlank() ||
                 entry.realNeed.isNotBlank() ||
@@ -161,46 +194,44 @@ class JournalRepository(private val journalDao: JournalDao) {
             "At least one question must be answered before saving entry"
         }
 
-        // Free text length limit
         Validators.requireValidFreeTextLength(entry.freeText)
     }
 
-    /**
-     * Validate MemoryEntry before saving using centralized Validators.
-     */
     private fun validateMemoryEntry(memory: MemoryEntry) {
-        // Type MUST be valid enum
         Validators.requireValidMemoryType(memory.type)
-
-        // Message cannot be empty
         Validators.requireValidMessageLength(memory.message)
 
-        // Urge strength, if provided, must be 1-10
         if (memory.urgeStrengthAtTime > 0) {
             Validators.requireValidUrgeStrength(memory.urgeStrengthAtTime)
         }
 
-        // Streak cannot be negative
         Validators.requireValidStreak(memory.streakAtTime)
     }
 
-    /**
-     * Validate CheckInEntry before saving using centralized Validators.
-     */
     private fun validateCheckInEntry(checkIn: CheckInEntry) {
-        // Date format validation
         Validators.requireValidDateFormat(checkIn.date)
-
-        // Mood must be valid
         Validators.requireValidMood(checkIn.mood)
-
-        // Risk level must be valid
         Validators.requireValidRiskLevel(checkIn.riskLevel)
-
-        // Intention length limit
         Validators.requireValidIntentionLength(checkIn.intention)
-
-        // Streak cannot be negative
         Validators.requireValidStreak(checkIn.streakAtTime)
+    }
+
+    private fun validateEveningCheckInEntry(entry: EveningCheckInEntry) {
+        Validators.requireValidDateFormat(entry.date)
+        Validators.requireValidStreak(entry.streakAtTime)
+
+        // Validate intention_followed if provided
+        entry.intentionFollowed?.let {
+            Validators.requireValidIntentionFollowed(it)
+        }
+
+        // Validate spiritual score range
+        Validators.requireValidSpiritualScore(entry.spiritualScore)
+
+        // Validate text lengths
+        entry.hardestMoment?.let { Validators.requireValidFreeTextLength(it) }
+        entry.wins?.let { Validators.requireValidFreeTextLength(it) }
+        entry.tomorrowConcern?.let { Validators.requireValidFreeTextLength(it) }
+        entry.intentionNote?.let { Validators.requireValidFreeTextLength(it) }
     }
 }

@@ -39,8 +39,11 @@ object Routes {
     const val KNOWLEDGE_ARTICLE_LIST = "knowledge_articles/{categoryId}"
     const val KNOWLEDGE_ARTICLE_READER = "knowledge_reader/{articleId}"
 
-    // -- Standalone --
+    // -- Check-Ins --
     const val MORNING_CHECK_IN = "morning_check_in"
+    const val EVENING_CHECK_IN = "evening_check_in"
+
+    // -- Standalone --
     const val PROMISE_WALL = "promise_wall"
     const val RESET_STREAK = "reset_streak"
     const val NOTIFICATION_SETTINGS = "notification_settings"

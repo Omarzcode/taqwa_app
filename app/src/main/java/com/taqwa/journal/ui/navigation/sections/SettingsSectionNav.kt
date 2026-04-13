@@ -44,6 +44,9 @@ fun NavGraphBuilder.settingsSection(
             morningEnabled = state.morningEnabled,
             morningHour = state.morningHour,
             morningMinute = state.morningMinute,
+            eveningEnabled = state.eveningEnabled,
+            eveningHour = state.eveningHour,
+            eveningMinute = state.eveningMinute,
             dangerHourEnabled = state.dangerHourEnabled,
             dangerHourDetected = state.dangerHourDetected,
             dangerHourStart = state.dangerHourStart,
@@ -54,13 +57,17 @@ fun NavGraphBuilder.settingsSection(
             inactivityEnabled = state.inactivityEnabled,
             streakCelebrationEnabled = state.streakCelebrationEnabled,
             postRelapseEnabled = state.postRelapseEnabled,
+            fridayEnabled = state.fridayEnabled,
             onMorningToggle = { notificationState.setMorningEnabled(it) },
             onMorningTimeChange = { h, m -> notificationState.setMorningTime(h, m) },
+            onEveningToggle = { notificationState.setEveningEnabled(it) },
+            onEveningTimeChange = { h, m -> notificationState.setEveningTime(h, m) },
             onDangerHourToggle = { notificationState.setDangerHourEnabled(it) },
             onMemoryResurfaceToggle = { notificationState.setMemoryResurfaceEnabled(it) },
             onInactivityToggle = { notificationState.setInactivityEnabled(it) },
             onStreakCelebrationToggle = { notificationState.setStreakCelebrationEnabled(it) },
             onPostRelapseToggle = { notificationState.setPostRelapseEnabled(it) },
+            onFridayToggle = { notificationState.setFridayEnabled(it) },
             onBack = { navController.popBackStack() }
         )
     }

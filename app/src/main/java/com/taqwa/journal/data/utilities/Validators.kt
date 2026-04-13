@@ -1,17 +1,13 @@
 package com.taqwa.journal.data.utilities
 
 import com.taqwa.journal.data.database.CheckInEntry
+import com.taqwa.journal.data.database.EveningCheckInEntry
 import com.taqwa.journal.data.database.MemoryEntry
 
-/**
- * Centralized validation constants and functions.
- * Single source of truth for all validation rules across the app.
- * Prevents duplication and makes it easy to adjust constraints globally.
- */
 object Validators {
 
     // ════════════════════════════════════════
-    // CONSTANTS - Update here for all usages
+    // CONSTANTS
     // ════════════════════════════════════════
 
     const val URGE_STRENGTH_MIN = 1
@@ -19,6 +15,7 @@ object Validators {
     const val MAX_FREETEXT_LENGTH = 10000
     const val MAX_MESSAGE_LENGTH = 10000
     const val MAX_INTENTION_LENGTH = 500
+    const val MAX_GRATITUDE_LENGTH = 500
     const val DATE_REGEX = "\\d{4}-\\d{2}-\\d{2}"
 
     const val HOUR_MIN = 0
@@ -167,6 +164,7 @@ object Validators {
             "Invalid minute $minute. Must be between $MINUTE_MIN and $MINUTE_MAX"
         }
     }
+
     // ════════════════════════════════════════
     // SLEEP QUALITY VALIDATION
     // ════════════════════════════════════════
@@ -185,13 +183,12 @@ object Validators {
     // GRATITUDE VALIDATION
     // ════════════════════════════════════════
 
-    const val MAX_GRATITUDE_LENGTH = 500
-
     fun requireValidGratitudeLength(gratitude: String) {
         require(gratitude.length <= MAX_GRATITUDE_LENGTH) {
             "Gratitude exceeds maximum length"
         }
     }
+
     // ════════════════════════════════════════
     // STREAK VALIDATION
     // ════════════════════════════════════════
@@ -203,6 +200,34 @@ object Validators {
     fun requireValidStreak(streak: Int) {
         require(isValidStreak(streak)) {
             "Streak cannot be negative, got $streak"
+        }
+    }
+
+    // ════════════════════════════════════════
+    // EVENING CHECK-IN VALIDATION
+    // ════════════════════════════════════════
+
+    fun isValidIntentionFollowed(value: String): Boolean {
+        return value in listOf(
+            EveningCheckInEntry.FOLLOWED_YES,
+            EveningCheckInEntry.FOLLOWED_PARTIALLY,
+            EveningCheckInEntry.FOLLOWED_NO
+        )
+    }
+
+    fun requireValidIntentionFollowed(value: String) {
+        require(isValidIntentionFollowed(value)) {
+            "Invalid intention_followed value '$value'. Must be YES, PARTIALLY, or NO"
+        }
+    }
+
+    fun isValidSpiritualScore(score: Int): Boolean {
+        return score in 0..6
+    }
+
+    fun requireValidSpiritualScore(score: Int) {
+        require(isValidSpiritualScore(score)) {
+            "Spiritual score must be between 0 and 6, got $score"
         }
     }
 }

@@ -6,34 +6,27 @@ import android.content.Intent
 import com.taqwa.journal.data.preferences.NotificationPreferences
 import com.taqwa.journal.data.preferences.StreakManager
 
-/**
- * Notification Receiver — مستقبل التنبيهات
- *
- * BroadcastReceiver that fires when an alarm triggers.
- * Shows the notification and reschedules repeating alarms.
- */
 class NotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val type = intent.getStringExtra(NotificationScheduler.EXTRA_NOTIFICATION_TYPE) ?: return
-        val streak = intent.getIntExtra(NotificationScheduler.EXTRA_CURRENT_STREAK, 0)
 
         val notificationManager = TaqwaNotificationManager(context)
         notificationManager.createNotificationChannels()
 
-        // Get fresh streak data
         val streakManager = StreakManager(context)
         val currentStreak = streakManager.getCurrentStreak()
 
         // Show the notification
         notificationManager.showNotification(type, currentStreak)
 
-        // Reschedule repeating notifications for next day
+        // Reschedule repeating notifications for next occurrence
         val scheduler = NotificationScheduler(context)
+        val preferences = NotificationPreferences(context)
+
         when (type) {
             TaqwaNotificationManager.TYPE_MORNING -> {
                 // Check for milestone
-                val preferences = NotificationPreferences(context)
                 if (notificationManager.isMilestoneDay(currentStreak)) {
                     val lastMilestone = preferences.getLastMilestoneNotified()
                     if (lastMilestone != currentStreak) {
@@ -44,21 +37,34 @@ class NotificationReceiver : BroadcastReceiver() {
                         )
                     }
                 }
-                // Reschedule for tomorrow
                 scheduler.scheduleMorningReminder(currentStreak)
             }
 
+            TaqwaNotificationManager.TYPE_EVENING -> {
+                scheduler.scheduleEveningReminder(currentStreak)
+            }
+
             TaqwaNotificationManager.TYPE_DANGER_HOUR -> {
-                // Reschedule for tomorrow
                 scheduler.scheduleDangerHourAlert(currentStreak)
             }
 
             TaqwaNotificationManager.TYPE_MEMORY -> {
-                // Reschedule for tomorrow at a new random time
                 scheduler.scheduleMemoryResurface()
             }
 
-            // Inactivity and post-relapse are one-time, no reschedule needed
+            TaqwaNotificationManager.TYPE_FRIDAY -> {
+                scheduler.scheduleFridayReminder(currentStreak)
+            }
+
+            TaqwaNotificationManager.TYPE_INACTIVITY -> {
+                // Reschedule inactivity check from now
+                scheduler.scheduleInactivityCheck(currentStreak)
+            }
+
+            // Post-relapse is one-time, no reschedule
         }
+
+        // Update last app interaction for inactivity tracking
+        preferences.updateLastAppOpen()
     }
 }

@@ -30,13 +30,15 @@ fun HomeScreen(
     state: HomeState,
     onAction: (HomeAction) -> Unit
 ) {
-    // Morning Check-In overlay
-    var checkInDismissed by remember { mutableStateOf(false) }
-    val showCheckInOverlay = state.showMorningCheckIn && !checkInDismissed
+    // Check-in overlays
+    var morningDismissed by remember { mutableStateOf(false) }
+    var eveningDismissed by remember { mutableStateOf(false) }
+    val showMorningOverlay = state.showMorningCheckIn && !morningDismissed
+    val showEveningOverlay = !showMorningOverlay && state.showEveningCheckIn && !eveningDismissed
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // ── Main Content ──
+        // Main Content
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -47,7 +49,7 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-            // ── Header ──
+            // Header
             Text(
                 text = "Taqwa",
                 style = TaqwaType.screenTitle.copy(
@@ -59,7 +61,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-            // ── Daily Ayah ──
+            // Daily Ayah
             if (state.dailyAyah != null) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -103,7 +105,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
             }
 
-            // ── Streak Card ──
+            // Streak Card
             TaqwaCard {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -142,16 +144,16 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        MiniStat(emoji = "🛡️", value = "${state.urgesDefeated}", label = "Defeated")
-                        MiniStat(emoji = "👑", value = "${state.longestStreak}", label = "Best Streak")
-                        MiniStat(emoji = "📉", value = "${state.totalRelapses}", label = "Relapses")
+                        MiniStat(emoji = "\uD83D\uDEE1\uFE0F", value = "${state.urgesDefeated}", label = "Defeated")
+                        MiniStat(emoji = "\uD83D\uDC51", value = "${state.longestStreak}", label = "Best Streak")
+                        MiniStat(emoji = "\uD83D\uDCC9", value = "${state.totalRelapses}", label = "Relapses")
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
 
-            // ── "I Need Help" Button ──
+            // "I Need Help" Button
             UrgeButton(onClick = { onAction(HomeAction.StartUrgeFlow) })
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
@@ -164,7 +166,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
-            // ── Quick Catch Button ──
+            // Quick Catch Button
             OutlinedButton(
                 onClick = { onAction(HomeAction.OpenQuickCatch) },
                 modifier = Modifier
@@ -182,7 +184,7 @@ fun HomeScreen(
                 shape = RoundedCornerShape(22.dp)
             ) {
                 Text(
-                    text = "🛡️  Quick Catch",
+                    text = "\uD83D\uDEE1\uFE0F  Quick Catch",
                     style = TaqwaType.button.copy(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
@@ -202,26 +204,37 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
         }
 
-        // ── Morning Check-In Overlay ──
-        if (showCheckInOverlay) {
+        // Morning Check-In Overlay
+        if (showMorningOverlay) {
             MorningCheckInOverlay(
                 onStartCheckIn = {
-                    checkInDismissed = true
+                    morningDismissed = true
                     onAction(HomeAction.OpenMorningCheckIn)
                 },
-                onDismiss = { checkInDismissed = true }
+                onDismiss = { morningDismissed = true }
             )
         }
 
-        // ── Milestone Dialog ──
+        // Evening Check-In Overlay
+        if (showEveningOverlay) {
+            EveningCheckInOverlay(
+                onStartCheckIn = {
+                    eveningDismissed = true
+                    onAction(HomeAction.OpenEveningCheckIn)
+                },
+                onDismiss = { eveningDismissed = true }
+            )
+        }
+
+        // Milestone Dialog
         if (state.hasMilestone) {
             TaqwaDialog(
                 isVisible = true,
                 onDismiss = { onAction(HomeAction.DismissMilestone) },
-                emoji = "🎉",
+                emoji = "\uD83C\uDF89",
                 title = "Milestone Reached!",
                 message = state.milestoneMessage,
-                confirmLabel = "Alhamdulillah! 🤲",
+                confirmLabel = "Alhamdulillah! \uD83E\uDD32",
                 confirmColor = VanillaCustard,
                 onConfirm = { onAction(HomeAction.DismissMilestone) },
                 dismissLabel = null
@@ -254,7 +267,7 @@ private fun MorningCheckInOverlay(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "☀️", fontSize = 40.sp)
+                Text(text = "\u2600\uFE0F", fontSize = 40.sp)
 
                 Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
 
@@ -277,7 +290,6 @@ private fun MorningCheckInOverlay(
 
                 Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-                // Start Check-In button
                 Button(
                     onClick = onStartCheckIn,
                     modifier = Modifier
@@ -290,14 +302,91 @@ private fun MorningCheckInOverlay(
                     )
                 ) {
                     Text(
-                        text = "☀️  Begin Check-In",
+                        text = "\u2600\uFE0F  Begin Check-In",
                         style = TaqwaType.button
                     )
                 }
 
                 Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
 
-                // Dismiss
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        text = "Maybe later",
+                        style = TaqwaType.caption,
+                        color = TextMuted
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ════════════════════════════════════════════
+// EVENING CHECK-IN OVERLAY
+// ════════════════════════════════════════════
+
+@Composable
+private fun EveningCheckInOverlay(
+    onStartCheckIn: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(OverlayDark),
+        contentAlignment = Alignment.Center
+    ) {
+        TaqwaCard(
+            modifier = Modifier
+                .padding(horizontal = TaqwaDimens.spaceXXXL)
+                .widthIn(max = 320.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "\uD83C\uDF19", fontSize = 40.sp)
+
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceL))
+
+                Text(
+                    text = "Good Evening",
+                    style = TaqwaType.sectionTitle,
+                    color = VanillaCustard,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+
+                Text(
+                    text = "Reflect on your day before you rest.\nClose the loop with Allah.",
+                    style = TaqwaType.bodySmall,
+                    color = TextGray,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+                Button(
+                    onClick = onStartCheckIn,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(TaqwaDimens.buttonHeight),
+                    shape = RoundedCornerShape(TaqwaDimens.buttonCornerRadius),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryMedium,
+                        contentColor = TextWhite
+                    )
+                ) {
+                    Text(
+                        text = "\uD83C\uDF19  Begin Reflection",
+                        style = TaqwaType.button
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(TaqwaDimens.spaceM))
+
                 TextButton(onClick = onDismiss) {
                     Text(
                         text = "Maybe later",

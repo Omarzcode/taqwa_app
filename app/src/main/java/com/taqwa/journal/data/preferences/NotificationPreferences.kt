@@ -4,16 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.taqwa.journal.data.utilities.PreferenceToggleManager
 
-/**
- * Notification Preferences — إعدادات التنبيهات
- *
- * Stores user preferences for each notification type,
- * last app open time, cached memories for notifications,
- * and detected danger hour.
- *
- * Refactored to use PreferenceToggleManager for boolean toggles
- * (eliminates ~60 LOC of duplicate get/set pairs).
- */
 class NotificationPreferences(context: Context) {
 
     private val prefs: SharedPreferences =
@@ -22,15 +12,21 @@ class NotificationPreferences(context: Context) {
     companion object {
         // Toggle keys
         private const val KEY_MORNING_ENABLED = "morning_enabled"
+        private const val KEY_EVENING_ENABLED = "evening_enabled"
         private const val KEY_DANGER_HOUR_ENABLED = "danger_hour_enabled"
         private const val KEY_MEMORY_RESURFACE_ENABLED = "memory_resurface_enabled"
         private const val KEY_INACTIVITY_ENABLED = "inactivity_enabled"
         private const val KEY_STREAK_CELEBRATION_ENABLED = "streak_celebration_enabled"
         private const val KEY_POST_RELAPSE_ENABLED = "post_relapse_enabled"
+        private const val KEY_FRIDAY_ENABLED = "friday_enabled"
 
         // Morning reminder time
         private const val KEY_MORNING_HOUR = "morning_hour"
         private const val KEY_MORNING_MINUTE = "morning_minute"
+
+        // Evening reminder time
+        private const val KEY_EVENING_HOUR = "evening_hour"
+        private const val KEY_EVENING_MINUTE = "evening_minute"
 
         // Danger hour detection
         private const val KEY_DANGER_HOUR_START = "danger_hour_start"
@@ -49,23 +45,22 @@ class NotificationPreferences(context: Context) {
         private const val KEY_LAST_MILESTONE_NOTIFIED = "last_milestone_notified"
     }
 
-    // ══════════════════════════════════════════
-    // TOGGLE MANAGERS (Generic utility)
-    // ══════════════════════════════════════════
-
+    // Toggle managers
     private val morningToggle = PreferenceToggleManager(prefs, KEY_MORNING_ENABLED, true)
+    private val eveningToggle = PreferenceToggleManager(prefs, KEY_EVENING_ENABLED, true)
     private val dangerHourToggle = PreferenceToggleManager(prefs, KEY_DANGER_HOUR_ENABLED, true)
     private val memoryResurfaceToggle = PreferenceToggleManager(prefs, KEY_MEMORY_RESURFACE_ENABLED, true)
     private val inactivityToggle = PreferenceToggleManager(prefs, KEY_INACTIVITY_ENABLED, true)
     private val streakCelebrationToggle = PreferenceToggleManager(prefs, KEY_STREAK_CELEBRATION_ENABLED, true)
     private val postRelapseToggle = PreferenceToggleManager(prefs, KEY_POST_RELAPSE_ENABLED, true)
+    private val fridayToggle = PreferenceToggleManager(prefs, KEY_FRIDAY_ENABLED, true)
 
-    // ══════════════════════════════════════════
-    // TOGGLE ACCESSORS (Delegated to managers)
-    // ══════════════════════════════════════════
-
+    // Toggle accessors
     fun isMorningReminderEnabled(): Boolean = morningToggle.isEnabled()
     fun setMorningReminderEnabled(enabled: Boolean) = morningToggle.setEnabled(enabled)
+
+    fun isEveningReminderEnabled(): Boolean = eveningToggle.isEnabled()
+    fun setEveningReminderEnabled(enabled: Boolean) = eveningToggle.setEnabled(enabled)
 
     fun isDangerHourEnabled(): Boolean = dangerHourToggle.isEnabled()
     fun setDangerHourEnabled(enabled: Boolean) = dangerHourToggle.setEnabled(enabled)
@@ -82,10 +77,10 @@ class NotificationPreferences(context: Context) {
     fun isPostRelapseEnabled(): Boolean = postRelapseToggle.isEnabled()
     fun setPostRelapseEnabled(enabled: Boolean) = postRelapseToggle.setEnabled(enabled)
 
-    // ══════════════════════════════════════════
-    // MORNING REMINDER TIME
-    // ══════════════════════════════════════════
+    fun isFridayReminderEnabled(): Boolean = fridayToggle.isEnabled()
+    fun setFridayReminderEnabled(enabled: Boolean) = fridayToggle.setEnabled(enabled)
 
+    // Morning reminder time
     fun getMorningHour(): Int = prefs.getInt(KEY_MORNING_HOUR, 7)
     fun getMorningMinute(): Int = prefs.getInt(KEY_MORNING_MINUTE, 0)
 
@@ -96,12 +91,19 @@ class NotificationPreferences(context: Context) {
             .apply()
     }
 
-    // ══════════════════════════════════════════
-    // DANGER HOUR
-    // ══════════════════════════════════════════
+    // Evening reminder time
+    fun getEveningHour(): Int = prefs.getInt(KEY_EVENING_HOUR, 21)
+    fun getEveningMinute(): Int = prefs.getInt(KEY_EVENING_MINUTE, 0)
 
+    fun setEveningTime(hour: Int, minute: Int) {
+        prefs.edit()
+            .putInt(KEY_EVENING_HOUR, hour)
+            .putInt(KEY_EVENING_MINUTE, minute)
+            .apply()
+    }
+
+    // Danger hour
     fun isDangerHourDetected(): Boolean = prefs.getBoolean(KEY_DANGER_HOUR_DETECTED, false)
-
     fun getDangerHourStart(): Int = prefs.getInt(KEY_DANGER_HOUR_START, -1)
     fun getDangerHourEnd(): Int = prefs.getInt(KEY_DANGER_HOUR_END, -1)
     fun getDangerAlertHour(): Int = prefs.getInt(KEY_DANGER_ALERT_HOUR, -1)
@@ -127,40 +129,28 @@ class NotificationPreferences(context: Context) {
             .apply()
     }
 
-    // ══════════════════════════════════════════
-    // APP USAGE TRACKING
-    // ══════════════════════════════════════════
-
+    // App usage tracking
     fun getLastAppOpen(): Long = prefs.getLong(KEY_LAST_APP_OPEN, System.currentTimeMillis())
 
     fun updateLastAppOpen() {
         prefs.edit().putLong(KEY_LAST_APP_OPEN, System.currentTimeMillis()).apply()
     }
 
-    // ══════════════════════════════════════════
-    // CACHED MEMORY FOR NOTIFICATIONS
-    // ══════════════════════════════════════════
-
+    // Cached memory
     fun getCachedMemory(): String = prefs.getString(KEY_CACHED_MEMORY, "") ?: ""
 
     fun setCachedMemory(memory: String) {
         prefs.edit().putString(KEY_CACHED_MEMORY, memory).apply()
     }
 
-    // ══════════════════════════════════════════
-    // MILESTONE TRACKING
-    // ══════════════════════════════════════════
-
+    // Milestone tracking
     fun getLastMilestoneNotified(): Int = prefs.getInt(KEY_LAST_MILESTONE_NOTIFIED, 0)
 
     fun setLastMilestoneNotified(days: Int) {
         prefs.edit().putInt(KEY_LAST_MILESTONE_NOTIFIED, days).apply()
     }
 
-    // ══════════════════════════════════════════
-    // CLEAR ALL
-    // ══════════════════════════════════════════
-
+    // Clear all
     fun clearAll() {
         prefs.edit().clear().apply()
     }

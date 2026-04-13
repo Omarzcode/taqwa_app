@@ -8,11 +8,6 @@ import android.os.Build
 import com.taqwa.journal.data.preferences.NotificationPreferences
 import java.util.Calendar
 
-/**
- * Notification Scheduler — مجدول التنبيهات
- *
- * Schedules and cancels all notification alarms using AlarmManager.
- */
 class NotificationScheduler(private val context: Context) {
 
     private val alarmManager: AlarmManager =
@@ -25,40 +20,34 @@ class NotificationScheduler(private val context: Context) {
         const val REQUEST_DANGER_HOUR = 2002
         const val REQUEST_MEMORY = 2003
         const val REQUEST_INACTIVITY = 2004
+        const val REQUEST_EVENING = 2005
         const val REQUEST_POST_RELAPSE = 2006
+        const val REQUEST_FRIDAY = 2007
 
         const val EXTRA_NOTIFICATION_TYPE = "notification_type"
         const val EXTRA_CURRENT_STREAK = "current_streak"
     }
 
-    // ══════════════════════════════════════════
-    // SCHEDULE ALL
-    // ══════════════════════════════════════════
-
-    /**
-     * Schedule all enabled notifications. Call on app start and after settings change.
-     */
     fun scheduleAll(currentStreak: Int) {
         scheduleMorningReminder(currentStreak)
+        scheduleEveningReminder(currentStreak)
         scheduleDangerHourAlert(currentStreak)
         scheduleMemoryResurface()
         scheduleInactivityCheck(currentStreak)
+        scheduleFridayReminder(currentStreak)
     }
 
-    /**
-     * Cancel all notifications.
-     */
     fun cancelAll() {
         cancelAlarm(REQUEST_MORNING)
+        cancelAlarm(REQUEST_EVENING)
         cancelAlarm(REQUEST_DANGER_HOUR)
         cancelAlarm(REQUEST_MEMORY)
         cancelAlarm(REQUEST_INACTIVITY)
         cancelAlarm(REQUEST_POST_RELAPSE)
+        cancelAlarm(REQUEST_FRIDAY)
     }
 
-    // ══════════════════════════════════════════
-    // MORNING REMINDER
-    // ══════════════════════════════════════════
+    // ── Morning Reminder ──
 
     fun scheduleMorningReminder(currentStreak: Int) {
         if (!preferences.isMorningReminderEnabled()) {
@@ -74,13 +63,12 @@ class NotificationScheduler(private val context: Context) {
             set(Calendar.MINUTE, minute)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-            // If time already passed today, schedule for tomorrow
             if (timeInMillis <= System.currentTimeMillis()) {
                 add(Calendar.DAY_OF_YEAR, 1)
             }
         }
 
-        scheduleRepeatingDaily(
+        scheduleExact(
             requestCode = REQUEST_MORNING,
             triggerAtMillis = calendar.timeInMillis,
             type = TaqwaNotificationManager.TYPE_MORNING,
@@ -88,9 +76,36 @@ class NotificationScheduler(private val context: Context) {
         )
     }
 
-    // ══════════════════════════════════════════
-    // DANGER HOUR ALERT
-    // ══════════════════════════════════════════
+    // ── Evening Reminder ──
+
+    fun scheduleEveningReminder(currentStreak: Int) {
+        if (!preferences.isEveningReminderEnabled()) {
+            cancelAlarm(REQUEST_EVENING)
+            return
+        }
+
+        val hour = preferences.getEveningHour()
+        val minute = preferences.getEveningMinute()
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        scheduleExact(
+            requestCode = REQUEST_EVENING,
+            triggerAtMillis = calendar.timeInMillis,
+            type = TaqwaNotificationManager.TYPE_EVENING,
+            streak = currentStreak
+        )
+    }
+
+    // ── Danger Hour Alert ──
 
     fun scheduleDangerHourAlert(currentStreak: Int) {
         if (!preferences.isDangerHourEnabled() || !preferences.isDangerHourDetected()) {
@@ -116,7 +131,7 @@ class NotificationScheduler(private val context: Context) {
             }
         }
 
-        scheduleRepeatingDaily(
+        scheduleExact(
             requestCode = REQUEST_DANGER_HOUR,
             triggerAtMillis = calendar.timeInMillis,
             type = TaqwaNotificationManager.TYPE_DANGER_HOUR,
@@ -124,9 +139,7 @@ class NotificationScheduler(private val context: Context) {
         )
     }
 
-    // ══════════════════════════════════════════
-    // MEMORY RESURFACE
-    // ══════════════════════════════════════════
+    // ── Memory Resurface ──
 
     fun scheduleMemoryResurface() {
         if (!preferences.isMemoryResurfaceEnabled()) {
@@ -134,7 +147,6 @@ class NotificationScheduler(private val context: Context) {
             return
         }
 
-        // Schedule at a random time between 2pm-8pm
         val randomHour = (14..20).random()
         val randomMinute = (0..59).random()
 
@@ -156,9 +168,7 @@ class NotificationScheduler(private val context: Context) {
         )
     }
 
-    // ══════════════════════════════════════════
-    // INACTIVITY CHECK
-    // ══════════════════════════════════════════
+    // ── Inactivity Check ──
 
     fun scheduleInactivityCheck(currentStreak: Int) {
         if (!preferences.isInactivityCheckEnabled()) {
@@ -166,9 +176,8 @@ class NotificationScheduler(private val context: Context) {
             return
         }
 
-        // Fire 3 days from now at 10am
         val calendar = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, 3)
+            add(Calendar.DAY_OF_YEAR, 2)
             set(Calendar.HOUR_OF_DAY, 10)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
@@ -183,9 +192,7 @@ class NotificationScheduler(private val context: Context) {
         )
     }
 
-    // ══════════════════════════════════════════
-    // POST-RELAPSE FOLLOW-UP
-    // ══════════════════════════════════════════
+    // ── Post-Relapse Follow-Up ──
 
     fun schedulePostRelapseFollowUp() {
         if (!preferences.isPostRelapseEnabled()) {
@@ -193,8 +200,8 @@ class NotificationScheduler(private val context: Context) {
             return
         }
 
-        // Fire 24 hours from now
-        val triggerTime = System.currentTimeMillis() + (24 * 60 * 60 * 1000L)
+        // Fire 2 hours from now
+        val triggerTime = System.currentTimeMillis() + (2 * 60 * 60 * 1000L)
 
         scheduleExact(
             requestCode = REQUEST_POST_RELAPSE,
@@ -204,22 +211,46 @@ class NotificationScheduler(private val context: Context) {
         )
     }
 
-    // ══════════════════════════════════════════
-    // DANGER HOUR CALCULATION
-    // ══════════════════════════════════════════
+    // ── Friday Reminder ──
 
-    /**
-     * Analyze journal entry timestamps to find the peak urge hour.
-     * Requires at least 5 entries to detect a pattern.
-     * Returns true if danger hour was detected and updated.
-     */
+    fun scheduleFridayReminder(currentStreak: Int) {
+        if (!preferences.isFridayReminderEnabled()) {
+            cancelAlarm(REQUEST_FRIDAY)
+            return
+        }
+
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 9)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+
+            // Find next Friday
+            while (get(Calendar.DAY_OF_WEEK) != Calendar.FRIDAY) {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+            // If it's already past 9 AM on Friday, schedule next Friday
+            if (timeInMillis <= System.currentTimeMillis()) {
+                add(Calendar.WEEK_OF_YEAR, 1)
+            }
+        }
+
+        scheduleExact(
+            requestCode = REQUEST_FRIDAY,
+            triggerAtMillis = calendar.timeInMillis,
+            type = TaqwaNotificationManager.TYPE_FRIDAY,
+            streak = currentStreak
+        )
+    }
+
+    // ── Danger Hour Calculation ──
+
     fun calculateDangerHour(timestamps: List<Long>): Boolean {
         if (timestamps.size < 5) {
             preferences.clearDangerHour()
             return false
         }
 
-        // Count entries per hour
         val hourCounts = IntArray(24)
         timestamps.forEach { timestamp ->
             val cal = Calendar.getInstance().apply { timeInMillis = timestamp }
@@ -227,7 +258,6 @@ class NotificationScheduler(private val context: Context) {
             hourCounts[hour]++
         }
 
-        // Find the 2-hour window with most entries
         var maxCount = 0
         var peakStartHour = 0
 
@@ -240,15 +270,12 @@ class NotificationScheduler(private val context: Context) {
             }
         }
 
-        // Only set if at least 3 entries in the peak window
         if (maxCount < 3) {
             preferences.clearDangerHour()
             return false
         }
 
         val peakEndHour = (peakStartHour + 2) % 24
-
-        // Alert 30 minutes before peak starts
         val alertHour: Int
         val alertMinute: Int
         if (peakStartHour == 0) {
@@ -263,51 +290,7 @@ class NotificationScheduler(private val context: Context) {
         return true
     }
 
-    // ══════════════════════════════════════════
-    // INTERNAL HELPERS
-    // ══════════════════════════════════════════
-
-    private fun scheduleRepeatingDaily(
-        requestCode: Int,
-        triggerAtMillis: Long,
-        type: String,
-        streak: Int
-    ) {
-        val pendingIntent = createPendingIntent(requestCode, type, streak)
-
-        // Use setExactAndAllowWhileIdle for first trigger, receiver will reschedule next day
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        triggerAtMillis,
-                        pendingIntent
-                    )
-                } else {
-                    // Fallback: use inexact alarm
-                    alarmManager.setAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        triggerAtMillis,
-                        pendingIntent
-                    )
-                }
-            } else {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent
-                )
-            }
-        } catch (e: SecurityException) {
-            // Fallback if exact alarm permission denied
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent
-            )
-        }
-    }
+    // ── Internal Helpers ──
 
     private fun scheduleExact(
         requestCode: Int,

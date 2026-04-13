@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.taqwa.journal.data.database.CheckInEntry
+import com.taqwa.journal.data.database.EveningCheckInEntry
 import com.taqwa.journal.data.database.JournalDatabase
 import com.taqwa.journal.data.database.JournalEntry
 import com.taqwa.journal.data.database.MemoryEntry
@@ -110,7 +111,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     val currentFreeText: StateFlow<String> = _currentFreeText.asStateFlow()
 
     // ══════════════════════════════════════════
-    // MEMORY BANK STATE - بنك الذاكرة
+    // MEMORY BANK STATE
     // ══════════════════════════════════════════
 
     val allMemories: Flow<List<MemoryEntry>> = MutableStateFlow<List<MemoryEntry>>(emptyList())
@@ -132,7 +133,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     val quickCatchCount: StateFlow<Int> = _quickCatchCount.asStateFlow()
 
     // ══════════════════════════════════════════
-    // MORNING CHECK-IN STATE - الورد الصباحي
+    // MORNING CHECK-IN STATE
     // ══════════════════════════════════════════
 
     private val _todayCheckInDone = MutableStateFlow(false)
@@ -154,7 +155,23 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     val checkInCount: Flow<Int> = MutableStateFlow(0)
 
     // ══════════════════════════════════════════
-    // SHIELD PLAN STATE - خطة الحماية
+    // EVENING CHECK-IN STATE
+    // ══════════════════════════════════════════
+
+    private val _todayEveningCheckInDone = MutableStateFlow(false)
+    val todayEveningCheckInDone: StateFlow<Boolean> = _todayEveningCheckInDone.asStateFlow()
+
+    private val _eveningCheckInLoaded = MutableStateFlow(false)
+    val eveningCheckInLoaded: StateFlow<Boolean> = _eveningCheckInLoaded.asStateFlow()
+
+    private val _todayEveningCheckIn = MutableStateFlow<EveningCheckInEntry?>(null)
+    val todayEveningCheckIn: StateFlow<EveningCheckInEntry?> = _todayEveningCheckIn.asStateFlow()
+
+    val allEveningCheckIns: Flow<List<EveningCheckInEntry>> = MutableStateFlow<List<EveningCheckInEntry>>(emptyList())
+    val eveningCheckInCount: Flow<Int> = MutableStateFlow(0)
+
+    // ══════════════════════════════════════════
+    // SHIELD PLAN STATE
     // ══════════════════════════════════════════
 
     val shieldPlanManager: ShieldPlanManager
@@ -177,6 +194,15 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
 
     private val _morningMinute = MutableStateFlow(0)
     val morningMinute: StateFlow<Int> = _morningMinute.asStateFlow()
+
+    private val _eveningEnabled = MutableStateFlow(true)
+    val eveningEnabled: StateFlow<Boolean> = _eveningEnabled.asStateFlow()
+
+    private val _eveningHour = MutableStateFlow(21)
+    val eveningHour: StateFlow<Int> = _eveningHour.asStateFlow()
+
+    private val _eveningMinute = MutableStateFlow(0)
+    val eveningMinute: StateFlow<Int> = _eveningMinute.asStateFlow()
 
     private val _dangerHourEnabled = MutableStateFlow(true)
     val dangerHourEnabled: StateFlow<Boolean> = _dangerHourEnabled.asStateFlow()
@@ -208,6 +234,9 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     private val _postRelapseEnabled = MutableStateFlow(true)
     val postRelapseEnabled: StateFlow<Boolean> = _postRelapseEnabled.asStateFlow()
 
+    private val _fridayEnabled = MutableStateFlow(true)
+    val fridayEnabled: StateFlow<Boolean> = _fridayEnabled.asStateFlow()
+
     init {
         val database = JournalDatabase.getDatabase(application)
         val dao = database.journalDao()
@@ -234,7 +263,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         refreshDailyAyah()
         refreshNotificationSettings()
 
-        // Initialize memory bank flows
         viewModelScope.launch {
             repository.allMemories.collect { memories ->
                 (allMemories as MutableStateFlow).value = memories
@@ -245,8 +273,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 (memoryCount as MutableStateFlow).value = count
             }
         }
-
-        // Initialize check-in state
         viewModelScope.launch {
             repository.allCheckIns.collect { checkIns ->
                 (allCheckIns as MutableStateFlow).value = checkIns
@@ -257,20 +283,31 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 (checkInCount as MutableStateFlow).value = count
             }
         }
+        viewModelScope.launch {
+            repository.allEveningCheckIns.collect { eveningCheckIns ->
+                (allEveningCheckIns as MutableStateFlow).value = eveningCheckIns
+            }
+        }
+        viewModelScope.launch {
+            repository.eveningCheckInCount.collect { count ->
+                (eveningCheckInCount as MutableStateFlow).value = count
+            }
+        }
 
         checkTodayCheckIn()
+        checkTodayEveningCheckIn()
         shieldPlanManager = ShieldPlanManager(application)
         refreshShieldPlans()
 
-        // Cache a random memory for notifications
         cacheMemoryForNotification()
-
-        // Calculate danger hour from existing data
         updateDangerHourFromData()
+
+        // Update last app open for inactivity tracking
+        notificationPreferences.updateLastAppOpen()
     }
 
     // ══════════════════════════════════════════
-    // EXISTING FUNCTIONS (unchanged)
+    // EXISTING FUNCTIONS
     // ══════════════════════════════════════════
 
     fun completeOnboarding(whyQuitting: String, firstPromise: String, firstDua: String) {
@@ -306,8 +343,8 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     fun resetStreak(reason: String) {
         streakManager.resetStreak(reason)
         refreshStreakData()
-        // Schedule post-relapse follow-up notification
         notificationScheduler.schedulePostRelapseFollowUp()
+        WidgetUpdater.updateAllWidgets(getApplication())
     }
 
     fun dismissMilestone() { _milestoneMessage.value = null }
@@ -346,7 +383,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     fun saveEntry() {
         viewModelScope.launch {
             try {
-                // Validate at least one question answered
                 val hasContent = _currentSituationContext.value.isNotBlank() ||
                         _currentFeelings.value.isNotEmpty() ||
                         _currentRealNeed.value.isNotEmpty() ||
@@ -354,7 +390,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                         _currentFreeText.value.isNotBlank()
                 require(hasContent) { "Please answer at least one question before saving" }
 
-                // Validate urge strength using centralized validator
                 Validators.requireValidUrgeStrength(_currentUrgeStrength.value)
 
                 val entry = JournalEntry(
@@ -369,10 +404,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 repository.insertEntry(entry)
                 resetCurrentEntry()
 
-                // Update danger hour calculation after new entry
                 updateDangerHourFromData()
-
-                // Cache a fresh memory for notifications
                 cacheMemoryForNotification()
             } catch (e: IllegalArgumentException) {
                 e.printStackTrace()
@@ -396,16 +428,14 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     }
 
     // ══════════════════════════════════════════
-    // SHIELD PLAN FUNCTIONS - خطة الحماية
+    // SHIELD PLAN FUNCTIONS
     // ══════════════════════════════════════════
 
     fun refreshShieldPlans() {
         _shieldPlans.value = shieldPlanManager.getShieldPlans()
     }
 
-    fun setEditingPlan(plan: ShieldPlan?) {
-        _editingPlan.value = plan
-    }
+    fun setEditingPlan(plan: ShieldPlan?) { _editingPlan.value = plan }
 
     fun updateShieldPlan(plan: ShieldPlan) {
         shieldPlanManager.updatePlan(plan)
@@ -423,14 +453,13 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     }
 
     // ══════════════════════════════════════════
-    // MEMORY BANK FUNCTIONS - بنك الذاكرة
+    // MEMORY BANK FUNCTIONS
     // ══════════════════════════════════════════
 
     fun saveRelapseLetter(message: String, trigger: String = "") {
         viewModelScope.launch {
             try {
                 Validators.requireValidMessageLength(message)
-
                 val memory = MemoryEntry(
                     type = MemoryEntry.TYPE_RELAPSE_LETTER,
                     message = message,
@@ -439,9 +468,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 )
                 repository.insertMemory(memory)
                 cacheMemoryForNotification()
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
+            } catch (e: IllegalArgumentException) { e.printStackTrace() }
         }
     }
 
@@ -449,7 +476,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             try {
                 Validators.requireValidMessageLength(message)
-
                 val memory = MemoryEntry(
                     type = MemoryEntry.TYPE_VICTORY_NOTE,
                     message = message,
@@ -458,9 +484,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 )
                 repository.insertMemory(memory)
                 cacheMemoryForNotification()
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
+            } catch (e: IllegalArgumentException) { e.printStackTrace() }
         }
     }
 
@@ -468,7 +492,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             try {
                 Validators.requireValidMessageLength(message)
-
                 val memory = MemoryEntry(
                     type = MemoryEntry.TYPE_MANUAL,
                     message = message,
@@ -476,58 +499,46 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 )
                 repository.insertMemory(memory)
                 cacheMemoryForNotification()
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
+            } catch (e: IllegalArgumentException) { e.printStackTrace() }
         }
     }
 
     fun toggleMemoryPin(memory: MemoryEntry) {
-        viewModelScope.launch {
-            repository.updateMemory(memory.copy(isPinned = !memory.isPinned))
-        }
+        viewModelScope.launch { repository.updateMemory(memory.copy(isPinned = !memory.isPinned)) }
     }
 
     fun deleteMemory(memory: MemoryEntry) {
-        viewModelScope.launch {
-            repository.deleteMemory(memory)
-        }
+        viewModelScope.launch { repository.deleteMemory(memory) }
     }
 
     fun loadQuickCatchData() {
         viewModelScope.launch {
             _quickCatchRelapseLetter.value = repository.getMostRecentRelapseLetter()
             _quickCatchVictoryNote.value = repository.getRandomVictoryNote()
-            _quickCatchRandomMemory.value = repository.getRandomPinnedMemory()
-                ?: repository.getRandomMemory()
+            _quickCatchRandomMemory.value = repository.getRandomPinnedMemory() ?: repository.getRandomMemory()
         }
     }
 
-    fun logQuickCatch() {
-        _quickCatchCount.value += 1
-    }
+    fun logQuickCatch() { _quickCatchCount.value += 1 }
 
     fun loadInterventionMemory() {
         viewModelScope.launch {
             _interventionMemory.value =
                 repository.getRandomPinnedMemory()
                     ?: repository.getRandomRelapseLetter()
-                            ?: repository.getRandomVictoryNote()
-                            ?: repository.getRandomMemory()
+                    ?: repository.getRandomVictoryNote()
+                    ?: repository.getRandomMemory()
         }
     }
 
     fun resetStreakWithLetter(reason: String, letterToSelf: String = "") {
         if (letterToSelf.isNotBlank()) {
-            saveRelapseLetter(
-                message = letterToSelf,
-                trigger = reason
-            )
+            saveRelapseLetter(message = letterToSelf, trigger = reason)
         }
         streakManager.resetStreak(reason)
         refreshStreakData()
-        // Schedule post-relapse follow-up notification
         notificationScheduler.schedulePostRelapseFollowUp()
+        WidgetUpdater.updateAllWidgets(getApplication())
     }
 
     // ══════════════════════════════════════════
@@ -546,7 +557,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
             app.getSharedPreferences("taqwa_onboarding", 0).edit().clear().apply()
             app.getSharedPreferences("taqwa_shield_plans", 0).edit().clear().apply()
 
-            // Cancel all notifications and clear preferences
             notificationScheduler.cancelAll()
             notificationPreferences.clearAll()
 
@@ -557,12 +567,14 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
             refreshNotificationSettings()
             _isOnboardingCompleted.value = false
             _todayCheckInDone.value = false
+            _todayEveningCheckInDone.value = false
+            _todayEveningCheckIn.value = null
             refreshShieldPlans()
         }
     }
 
     // ══════════════════════════════════════════
-    // MORNING CHECK-IN FUNCTIONS - الورد الصباحي
+    // MORNING CHECK-IN FUNCTIONS
     // ══════════════════════════════════════════
 
     fun checkTodayCheckIn() {
@@ -579,7 +591,7 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
             _checkInMemory.value =
                 repository.getRandomPinnedMemory()
                     ?: repository.getRandomRelapseLetter()
-                            ?: repository.getRandomMemory()
+                    ?: repository.getRandomMemory()
             _yesterdayCheckIn.value = repository.getYesterdayCheckIn()
             val today = java.time.LocalDate.now().toString()
             _todayCheckIn.value = repository.getCheckInForDate(today)
@@ -623,6 +635,83 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 WidgetUpdater.updateAllWidgets(getApplication())
             } catch (e: android.database.sqlite.SQLiteConstraintException) {
                 _todayCheckInDone.value = true
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // EVENING CHECK-IN FUNCTIONS
+    // ══════════════════════════════════════════
+
+    fun checkTodayEveningCheckIn() {
+        viewModelScope.launch {
+            val today = java.time.LocalDate.now().toString()
+            val existing = repository.getEveningCheckInForDate(today)
+            _todayEveningCheckInDone.value = existing != null
+            _todayEveningCheckIn.value = existing
+            _eveningCheckInLoaded.value = true
+        }
+    }
+
+    fun loadEveningCheckInData() {
+        viewModelScope.launch {
+            val today = java.time.LocalDate.now().toString()
+            _todayEveningCheckIn.value = repository.getEveningCheckInForDate(today)
+            _todayCheckIn.value = repository.getTodayMorningCheckIn()
+        }
+    }
+
+    fun saveEveningCheckIn(
+        intentionFollowed: String? = null,
+        intentionNote: String? = null,
+        prayedFive: Boolean = false,
+        morningAdhkar: Boolean = false,
+        eveningAdhkar: Boolean = false,
+        readQuran: Boolean = false,
+        madeIstighfar: Boolean = false,
+        loweredGaze: Boolean = false,
+        hardestMoment: String? = null,
+        hardestTrigger: String? = null,
+        wins: String? = null,
+        tomorrowConcern: String? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                val today = java.time.LocalDate.now().toString()
+
+                var score = 0
+                if (prayedFive) score++
+                if (morningAdhkar) score++
+                if (eveningAdhkar) score++
+                if (readQuran) score++
+                if (madeIstighfar) score++
+                if (loweredGaze) score++
+
+                val entry = EveningCheckInEntry(
+                    date = today,
+                    intentionFollowed = intentionFollowed,
+                    intentionNote = intentionNote,
+                    prayedFive = prayedFive,
+                    morningAdhkar = morningAdhkar,
+                    eveningAdhkar = eveningAdhkar,
+                    readQuran = readQuran,
+                    madeIstighfar = madeIstighfar,
+                    loweredGaze = loweredGaze,
+                    spiritualScore = score,
+                    hardestMoment = hardestMoment,
+                    hardestTrigger = hardestTrigger,
+                    wins = wins,
+                    tomorrowConcern = tomorrowConcern,
+                    streakAtTime = _currentStreak.value
+                )
+                repository.insertEveningCheckIn(entry)
+                _todayEveningCheckInDone.value = true
+                _todayEveningCheckIn.value = entry
+                WidgetUpdater.updateAllWidgets(getApplication())
+            } catch (e: android.database.sqlite.SQLiteConstraintException) {
+                _todayEveningCheckInDone.value = true
             } catch (e: IllegalArgumentException) {
                 e.printStackTrace()
             }
@@ -703,6 +792,9 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _morningEnabled.value = notificationPreferences.isMorningReminderEnabled()
         _morningHour.value = notificationPreferences.getMorningHour()
         _morningMinute.value = notificationPreferences.getMorningMinute()
+        _eveningEnabled.value = notificationPreferences.isEveningReminderEnabled()
+        _eveningHour.value = notificationPreferences.getEveningHour()
+        _eveningMinute.value = notificationPreferences.getEveningMinute()
         _dangerHourEnabled.value = notificationPreferences.isDangerHourEnabled()
         _dangerHourDetected.value = notificationPreferences.isDangerHourDetected()
         _dangerHourStart.value = notificationPreferences.getDangerHourStart()
@@ -713,16 +805,13 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _inactivityEnabled.value = notificationPreferences.isInactivityCheckEnabled()
         _streakCelebrationEnabled.value = notificationPreferences.isStreakCelebrationEnabled()
         _postRelapseEnabled.value = notificationPreferences.isPostRelapseEnabled()
+        _fridayEnabled.value = notificationPreferences.isFridayReminderEnabled()
     }
 
     fun setMorningReminderEnabled(enabled: Boolean) {
         notificationPreferences.setMorningReminderEnabled(enabled)
         _morningEnabled.value = enabled
-        if (enabled) {
-            notificationScheduler.scheduleMorningReminder(_currentStreak.value)
-        } else {
-            notificationScheduler.scheduleMorningReminder(_currentStreak.value)
-        }
+        notificationScheduler.scheduleMorningReminder(_currentStreak.value)
     }
 
     fun setMorningTime(hour: Int, minute: Int) {
@@ -730,6 +819,19 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _morningHour.value = hour
         _morningMinute.value = minute
         notificationScheduler.scheduleMorningReminder(_currentStreak.value)
+    }
+
+    fun setEveningReminderEnabled(enabled: Boolean) {
+        notificationPreferences.setEveningReminderEnabled(enabled)
+        _eveningEnabled.value = enabled
+        notificationScheduler.scheduleEveningReminder(_currentStreak.value)
+    }
+
+    fun setEveningTime(hour: Int, minute: Int) {
+        notificationPreferences.setEveningTime(hour, minute)
+        _eveningHour.value = hour
+        _eveningMinute.value = minute
+        notificationScheduler.scheduleEveningReminder(_currentStreak.value)
     }
 
     fun setDangerHourEnabled(enabled: Boolean) {
@@ -760,11 +862,12 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         _postRelapseEnabled.value = enabled
     }
 
+    fun setFridayReminderEnabled(enabled: Boolean) {
+        notificationPreferences.setFridayReminderEnabled(enabled)
+        _fridayEnabled.value = enabled
+        notificationScheduler.scheduleFridayReminder(_currentStreak.value)
+    }
 
-    /**
-     * Cache a random memory message for use in notifications.
-     * Called after saving any memory and on init.
-     */
     private fun cacheMemoryForNotification() {
         viewModelScope.launch {
             val memory = repository.getRandomPinnedMemory()
@@ -773,7 +876,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
                 ?: repository.getRandomMemory()
 
             if (memory != null) {
-                // Truncate to 100 chars for notification
                 val truncated = if (memory.message.length > 100) {
                     memory.message.take(100) + "..."
                 } else {
@@ -784,9 +886,6 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    /**
-     * Analyze journal entry timestamps and update danger hour.
-     */
     private fun updateDangerHourFromData() {
         viewModelScope.launch {
             repository.allEntries.collect { entries ->
