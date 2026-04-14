@@ -1,6 +1,8 @@
 package com.taqwa.journal.ui.navigation.sections
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -8,7 +10,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.taqwa.journal.ui.navigation.Routes
 import com.taqwa.journal.ui.navigation.state.StreakStateHolder
-import com.taqwa.journal.ui.screens.*
+import com.taqwa.journal.ui.screens.CalendarScreen
+import com.taqwa.journal.ui.screens.EntryDetailScreen
+import com.taqwa.journal.ui.screens.PastEntriesScreen
+import com.taqwa.journal.ui.screens.PatternAnalysisScreen
+import com.taqwa.journal.ui.screens.RelapseHistoryScreen
+import com.taqwa.journal.ui.screens.ResetScreen
 import com.taqwa.journal.ui.viewmodel.JournalViewModel
 
 fun NavGraphBuilder.browseSection(
@@ -86,7 +93,6 @@ fun NavGraphBuilder.browseSection(
             onBack = { navController.popBackStack() }
         )
     }
-
     composable(Routes.RELAPSE_HISTORY) {
         val streak = streakState.collectState()
 
