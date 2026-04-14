@@ -542,6 +542,49 @@ class JournalViewModel(application: Application) : AndroidViewModel(application)
     }
 
     // ══════════════════════════════════════════
+    // RELAPSE RECOVERY FUNCTIONS
+    // ══════════════════════════════════════════
+
+    fun completeRelapseRecovery(
+        trigger: String,
+        feeling: String,
+        situation: String,
+        shieldNote: String,
+        letterToSelf: String,
+        newIntention: String
+    ) {
+        val reasonParts = mutableListOf<String>()
+        if (trigger.isNotBlank()) reasonParts.add("Trigger: ")
+        if (feeling.isNotBlank()) reasonParts.add("Feeling: ")
+        if (situation.isNotBlank()) reasonParts.add("Situation: ")
+        val reason = if (reasonParts.isNotEmpty()) reasonParts.joinToString("; ") else "Relapse"
+
+        if (letterToSelf.isNotBlank()) {
+            val fullLetter = buildString {
+                append(letterToSelf)
+                if (trigger.isNotBlank()) append("\n\n[Trigger: ]")
+                if (feeling.isNotBlank()) append("\n[Feeling: ]")
+                if (situation.isNotBlank()) append("\n[Situation: ]")
+            }
+            saveRelapseLetter(message = fullLetter, trigger = trigger)
+        }
+
+        if (shieldNote.isNotBlank()) {
+            saveManualMemory("Shield Update: ")
+        }
+
+        streakManager.resetStreak(reason)
+        refreshStreakData()
+        notificationScheduler.schedulePostRelapseFollowUp()
+        WidgetUpdater.updateAllWidgets(getApplication())
+
+        if (newIntention.isNotBlank()) {
+            promiseManager.addReminder("Fresh start intention: ")
+            refreshPromiseData()
+        }
+    }
+
+    // ══════════════════════════════════════════
     // CLEAR ALL DATA
     // ══════════════════════════════════════════
 

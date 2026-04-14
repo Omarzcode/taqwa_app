@@ -30,7 +30,6 @@ fun HomeScreen(
     state: HomeState,
     onAction: (HomeAction) -> Unit
 ) {
-    // Check-in overlays
     var morningDismissed by remember { mutableStateOf(false) }
     var eveningDismissed by remember { mutableStateOf(false) }
     val showMorningOverlay = state.showMorningCheckIn && !morningDismissed
@@ -38,7 +37,6 @@ fun HomeScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Main Content
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -49,7 +47,6 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
 
-            // Header
             Text(
                 text = "Taqwa",
                 style = TaqwaType.screenTitle.copy(
@@ -202,6 +199,79 @@ fun HomeScreen(
             )
 
             Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXXL))
+
+            // ── "I Relapsed" Button ──
+            var showRelapseConfirm by remember { mutableStateOf(false) }
+
+            TextButton(
+                onClick = { showRelapseConfirm = true },
+                modifier = Modifier.height(40.dp)
+            ) {
+                Text(
+                    text = "I relapsed...",
+                    style = TaqwaType.caption.copy(
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 13.sp
+                    ),
+                    color = TextMuted.copy(alpha = 0.5f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(TaqwaDimens.spaceXXL))
+
+            // Relapse confirmation dialog
+            if (showRelapseConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showRelapseConfirm = false },
+                    title = {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "\uD83E\uDD32", fontSize = 36.sp)
+                            Spacer(modifier = Modifier.height(TaqwaDimens.spaceS))
+                            Text(
+                                text = "It's okay.",
+                                style = TaqwaType.cardTitle,
+                                color = TextWhite,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    },
+                    text = {
+                        Text(
+                            text = "What matters is that you're here.\n\nLet's process this together \u2014 no shame, no judgment.\n\nAllah's mercy is greater than any sin.",
+                            style = TaqwaType.body,
+                            color = TextLight,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 22.sp
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showRelapseConfirm = false
+                            onAction(HomeAction.OpenRelapseRecovery)
+                        }) {
+                            Text(
+                                text = "Begin Recovery  \u2192",
+                                style = TaqwaType.button,
+                                color = PrimaryLight
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showRelapseConfirm = false }) {
+                            Text(
+                                text = "Not now",
+                                style = TaqwaType.button,
+                                color = TextMuted
+                            )
+                        }
+                    },
+                    containerColor = BackgroundCard,
+                    shape = RoundedCornerShape(TaqwaDimens.cardCornerRadius)
+                )
+            }
         }
 
         // Morning Check-In Overlay

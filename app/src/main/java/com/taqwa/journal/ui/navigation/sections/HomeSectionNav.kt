@@ -8,6 +8,7 @@ import com.taqwa.journal.ui.navigation.Routes
 import com.taqwa.journal.ui.screens.HomeScreen
 import com.taqwa.journal.ui.screens.MorningCheckInScreen
 import com.taqwa.journal.ui.screens.EveningCheckInScreen
+import com.taqwa.journal.ui.screens.RelapseRecoveryScreen
 import com.taqwa.journal.ui.screens.home.HomeAction
 import com.taqwa.journal.ui.screens.home.HomeState
 import com.taqwa.journal.ui.viewmodel.JournalViewModel
@@ -73,6 +74,9 @@ fun NavGraphBuilder.homeSection(
                         viewModel.loadEveningCheckInData()
                         navController.navigate(Routes.EVENING_CHECK_IN)
                     }
+                    HomeAction.OpenRelapseRecovery -> {
+                        navController.navigate(Routes.RELAPSE_RECOVERY)
+                    }
                     HomeAction.DismissMilestone -> {
                         viewModel.dismissMilestone()
                     }
@@ -137,6 +141,29 @@ fun NavGraphBuilder.homeSection(
                     hardestTrigger = hardestTrigger,
                     wins = wins,
                     tomorrowConcern = tomorrowConcern
+                )
+            },
+            onBack = { navController.popBackStack() }
+        )
+    }
+
+    composable(Routes.RELAPSE_RECOVERY) {
+        val currentStreak by viewModel.currentStreak.collectAsState()
+        val longestStreak by viewModel.longestStreak.collectAsState()
+        val totalRelapses by viewModel.totalRelapses.collectAsState()
+
+        RelapseRecoveryScreen(
+            currentStreak = currentStreak,
+            longestStreak = longestStreak,
+            totalRelapses = totalRelapses,
+            onComplete = { trigger, feeling, situation, shieldNote, letterToSelf, newIntention ->
+                viewModel.completeRelapseRecovery(
+                    trigger = trigger,
+                    feeling = feeling,
+                    situation = situation,
+                    shieldNote = shieldNote,
+                    letterToSelf = letterToSelf,
+                    newIntention = newIntention
                 )
             },
             onBack = { navController.popBackStack() }

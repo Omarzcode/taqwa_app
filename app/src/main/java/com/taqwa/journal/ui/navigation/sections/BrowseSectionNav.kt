@@ -93,6 +93,8 @@ fun NavGraphBuilder.browseSection(
         RelapseHistoryScreen(
             relapseHistory = streak.relapseHistory,
             totalRelapses = streak.totalRelapses,
+            currentStreak = streak.currentStreak,
+            longestStreak = streak.longestStreak,
             onBack = { navController.popBackStack() }
         )
     }

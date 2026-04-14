@@ -43,6 +43,9 @@ object Routes {
     const val MORNING_CHECK_IN = "morning_check_in"
     const val EVENING_CHECK_IN = "evening_check_in"
 
+    // -- Relapse Recovery --
+    const val RELAPSE_RECOVERY = "relapse_recovery"
+
     // -- Standalone --
     const val PROMISE_WALL = "promise_wall"
     const val RESET_STREAK = "reset_streak"
